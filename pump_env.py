@@ -19,7 +19,7 @@ class PumpEnv(gym.Env):
         super(PumpEnv, self).__init__()
         # Continuous actions
         self.action_space = spaces.Box(low=-1, high=1,
-                                            shape=(4,), dtype=np.float32)
+                                            shape=(2,), dtype=np.float32)
         # Input observation:
         dim_obs = 10
         n_stack_obs = 2
@@ -55,31 +55,17 @@ class PumpEnv(gym.Env):
             print("Action[0] error")
         
         #[Action 1]: Valve  (Change P_M first)
-        # if action[1] > 0.5 and action[1] <= 1:
-        #     self.pump.open_R_valve()
-        # elif action[1] > 0:
-        #     self.pump.open_inner_valve()
-        # elif action[1] > -0.5:
-        #     self.pump.open_L_valve()
-        # elif action[1] >= -1:
-        #     pass
-        # else:
-        #     print("Action[1] error")
-        pump_open_counter = 0
-        if action[1] > 0:
+        if action[1] > 0.5 and action[1] <= 1:
             self.pump.open_R_valve()
-            pump_open_counter+=1
-        if action[2] > 0:
+        elif action[1] > 0:
             self.pump.open_inner_valve()
-            pump_open_counter+=1
-        if action[3] > 0:
+        elif action[1] > -0.5:
             self.pump.open_L_valve()
-            pump_open_counter+=1
-        if pump_open_counter > 1:
-            self.reward = -100
-        if pump_open_counter == 0:
-            self.reward = -100
-
+        elif action[1] >= -1:
+            pass
+        else:
+            print("Action[1] error")
+        
         # Check if the pump is done
         info = {}
         done_threshold = 0.01
