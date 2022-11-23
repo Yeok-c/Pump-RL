@@ -2,6 +2,8 @@ from stable_baselines3 import PPO
 import os
 import time
 from pump_env import PumpEnv
+from pump_env_variable_load import PumpEnvVar
+
 
 models_dir = f"models/{int(time.time())}"
 logs_dir = f"logs/{int(time.time())}"
@@ -12,7 +14,7 @@ if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
 
 # Environment
-env = PumpEnv(goal_pressure_range=[1.1, 4.0])  # Set goal pressure range
+env = PumpEnvVar(var_L_range=[0.0,0.02], goal_pressure_range=[1.1, 4.0])  # Set goal pressure range
 # env = make_vec_env(lambda: env, n_envs=1)  # Multi-process (This behaves like batchsize)
 env.reset()
 

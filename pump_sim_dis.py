@@ -8,9 +8,13 @@ import numpy as np
 
 P_0 = 1.01*1e5  # Pa
 
+
 class chamber:
     def __init__(self, L0, P0):
-        self.radius = 0.02  # Radius of chamber
+        # self.radius = 0.02  # Radius of chamber
+        self.a = 0.02  # The short edge of chamber cross surface
+        self.b = 0.03  # The long edge of chamber cross surface
+        self.n = 6   # The number of element size
         self.L = L0  # Length of chamber
         self.P = P0  # Pressure of chamber
         self.V = self.calculate_V()  # Volume of chamber
@@ -21,9 +25,14 @@ class chamber:
         if L is None:
             L = self.L
         # Calculate the volume of chamber (V) by the length (L)
-        compensate = - 0.002 * math.pi * self.radius * self.radius
-        V = L * math.pi * self.radius * self.radius
-        V += compensate
+        # compensate = - 0.002 * math.pi * self.radius * self.radius
+        # V = L * math.pi * self.radius * self.radius
+
+        # Calculate the volume of chamber (V) by the length (L)
+        compensate = -2.5E-06
+        h = L / self.n
+        V_seg = (5*self.b*self.b/6 + self.a*self.b/3 - self.a*self.a/6) * h
+        V = 2 * self.n * V_seg + compensate
         return V
     def calculate_P(self):
         # Calculate the pressure of chamber (P) by the volume (V)
@@ -129,20 +138,14 @@ class simulator:
 
 
 if __name__ == '__main__':
-
+    pump = hybrid_pump(L_L=0.1, L_R=0.1+0.1)
+    print(pump.Lchamber_V_max, pump.Lchamber_V_min)
+    print(pump.Rchamber_V_max, pump.Rchamber_V_min)
+    # pump.render()
+    # pump.move_motor_to_R(0.05)
+    # print(pump.Rchamber.P / P_0)
+    # pump.render()
     '''
-    # action: [-0.11293268 -1.        ] self.pump.Lchamber.P: 52494.02610130577 self.pump.Rchamber.P: 95497.5536424259 self.pump.P_M: -0.0056466341018676786
-    # action: [-0.73517716 -0.40774852] self.pump.Lchamber.P: 101000.0 self.pump.Rchamber.P: 73449.71714242536 self.pump.P_M: -0.03675885796546936
-    # action: [ 1.         -0.11729856] self.pump.Lchamber.P: 101000.0 self.pump.Rchamber.P: 206208.3333333333 self.pump.P_M: 0.05
-    # action: [ 0.3907593 -1.         ] self.pump.Lchamber.P: 127175.9305026569 self.pump.Rchamber.P: 126150.18119638196 self.pump.P_M: 0.01953796446323395
-    # action: [-0.68165046  0.1595722 ] self.pump.Lchamber.P: 126765.30612244895 self.pump.Rchamber.P: 126765.30612244895 self.pump.P_M: -0.034082522988319396
-    # action: [0.4569448  0.09706157  ] self.pump.Lchamber.P: 126765.30612244895 self.pump.Rchamber.P: 126765.30612244895 self.pump.P_M: 0.02284723967313767
-    # action: [-0.87153196 -0.5983197 ] self.pump.Lchamber.P: 281482.539043478 self.pump.Rchamber.P: 67290.51829255 self.pump.P_M: -0.04357659816741944
-    
-    # obs: [ 1.98568010e+05  2.81482539e+05  6.72905183e+04  6.83904638e-05  1.77910400e-04 -4.35765982e-02]
-    # norm_obs: [ 0.93135334  1.21075668 -0.53755694 -0.87153256  0.87152133 -0.87153196]
-    
-
     pump = hybrid_pump(0.1, 0.1)
     pump.move_motor_to_L(0.05)
     pump.open_L_valve()
@@ -183,9 +186,9 @@ if __name__ == '__main__':
     '''
     
     
-    
+    '''
     # (a)
-    pump = hybrid_pump(0.1, 0.1)
+    pump = hybrid_pump(0.1, 0.1+0.05)
     print(pump.P_M)
     # print(pump.Lchamber_V_max, pump.Lchamber_V_min)
     # print(pump.Rchamber_V_max, pump.Rchamber_V_min)
@@ -243,7 +246,7 @@ if __name__ == '__main__':
 
     output_P_min = pump.Rchamber.P
     print("output_P_min = ", output_P_min)  # 10635.948812228482
-
+    '''
     '''
     # Inverse cycle
     # (b)
