@@ -1,8 +1,9 @@
-from stable_baselines3 import PPO
+from stable_baselines3 import DDPG, PPO
 import os
 import time
 from pump_env import PumpEnv
 from pump_env_variable_load import PumpEnvVar
+from stable_baselines3.common.env_util import make_vec_env
 
 
 models_dir = f"models/{int(time.time())}"
@@ -15,11 +16,11 @@ if not os.path.exists(logs_dir):
 
 # Environment
 env = PumpEnvVar(var_L_range=[0.0,0.02], goal_pressure_range=[1.1, 4.0])  # Set goal pressure range
-# env = make_vec_env(lambda: env, n_envs=1)  # Multi-process (This behaves like batchsize)
+# env = make_vec_env(lambda: env, n_envs=3)  # Multi-process (This behaves like batchsize)
 env.reset()
 
 # Model
-model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logs_dir)
+model = DDPG("MlpPolicy", env, verbose=1, tensorboard_log=logs_dir)
 
 # Train and save every TIMESTEPS steps
 TIMESTEPS = 10000

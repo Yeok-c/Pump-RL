@@ -31,6 +31,7 @@ class PumpEnvVar(PumpEnv):
         self.goal_pressure_range = goal_pressure_range
         self.goal_pressure = 0
         self.prev_observation = np.zeros((dim_obs,))
+        self.sequence_num = 0
         
 
     def reset(self):
