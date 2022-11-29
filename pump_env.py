@@ -19,7 +19,7 @@ class PumpEnv(gym.Env):
         super(PumpEnv, self).__init__()
         # Continuous actions
         self.action_space = spaces.Box(low=-1, high=1,
-                                            shape=(2,), dtype=np.float32)
+                                            shape=(4,), dtype=np.float32)
         # Input observation:
         dim_obs = 10
         n_stack_obs = 2
@@ -32,17 +32,16 @@ class PumpEnv(gym.Env):
         self.goal_pressure_range = goal_pressure_range
         self.goal_pressure = 0
         self.prev_observation = np.zeros((dim_obs,))
-        self.sequence_num = 0
 
 
     def step(self, action):
         # Execute one time step within the environment
         self.action_counter += 1
 
-        # # Reset valve for visualization
-        # self.pump.close_R_valve()
-        # self.pump.close_L_valve()
-        # self.pump.close_inner_valve()
+        # Reset valve for visualization
+        self.pump.close_R_valve()
+        self.pump.close_L_valve()
+        self.pump.close_inner_valve()
 
         # [Action 0]: P_M
         prev_P_M = self.pump.P_M
@@ -55,7 +54,7 @@ class PumpEnv(gym.Env):
         else:
             print("Action[0] error")
         
-        # #[Action 1]: Valve  (Change P_M first)
+        #[Action 1]: Valve  (Change P_M first)
         # if action[1] > 0.5 and action[1] <= 1:
         #     self.pump.open_R_valve()
         # elif action[1] > 0:
@@ -66,59 +65,20 @@ class PumpEnv(gym.Env):
         #     pass
         # else:
         #     print("Action[1] error")
-        
-        #[Action 1]: Valve  Transition
-        def transition(sequence_num):
-            if sequence_num == 0: # left open
-                self.pump.close_R_valve()
-                self.pump.close_inner_valve()
-                self.pump.open_L_valve()
-            if sequence_num in [1, 3, 5, 7]: # none open
-                self.pump.close_R_valve()
-                self.pump.close_inner_valve()
-                self.pump.close_L_valve()
-            if sequence_num in [2, 6]: # # inner open
-                self.pump.close_R_valve()
-                self.pump.open_inner_valve()
-                self.pump.close_L_valve()
-            if sequence_num == 4: # # right open
-                self.pump.open_R_valve()
-                self.pump.close_inner_valve()
-                self.pump.close_L_valve()
-            sequence_num += 1
-            if sequence_num == 8:
-                sequence_num = 0
-            return sequence_num
-
-        # self.pump.close_R_valve()
-        # self.pump.close_L_valve()
-        # self.pump.close_inner_valve()
-            
-            # 0 left open
-            # 1 none open
-            # 2 inner open
-            # 3 none open
-            # 4 right open
-            # 5 none open
-            # 6 inner open
-            # 7 none open
-
+        pump_open_counter = 0
         if action[1] > 0:
-            self.sequence_num = transition(self.sequence_num)
-        else:
-            pass
-
-
-        #     self.pump.open_R_valve()
-        # elif action[1] > 0:
-        #     self.pump.open_inner_valve()
-        # elif action[1] > -0.5:
-        #     self.pump.open_L_valve()
-        # elif action[1] >= -1:
-        #     pass
-        # else:
-        #     print("Action[1] error")
-        
+            self.pump.open_R_valve()
+            pump_open_counter+=1
+        if action[2] > 0:
+            self.pump.open_inner_valve()
+            pump_open_counter+=1
+        if action[3] > 0:
+            self.pump.open_L_valve()
+            pump_open_counter+=1
+        if pump_open_counter > 1:
+            self.reward = -100
+        if pump_open_counter == 0:
+            self.reward = -100
 
         # Check if the pump is done
         info = {}
