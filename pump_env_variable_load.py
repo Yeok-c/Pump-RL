@@ -17,7 +17,7 @@ class PumpEnvVar(PumpEnv):
         # super(PumpEnv, self).__init__()
         # Continuous actions
         self.action_space = spaces.Box(low=-1, high=1,
-                                            shape=(4,), dtype=np.float32)
+                                            shape=(2,), dtype=np.float32)
         # Input observation:
         dim_obs = 10
         n_stack_obs = 2
@@ -31,6 +31,7 @@ class PumpEnvVar(PumpEnv):
         self.goal_pressure_range = goal_pressure_range
         self.goal_pressure = 0
         self.prev_observation = np.zeros((dim_obs,))
+        self.sequence_num = 0
         
 
     def reset(self):
@@ -47,14 +48,12 @@ class PumpEnvVar(PumpEnv):
         self.goal_pressure = random.uniform(self.goal_pressure_range[0], self.goal_pressure_range[1]) * P_0
 
         # Calculate observation
-        self.step_observation = np.array(
-            [self.goal_pressure, 
-            float(self.goal_pressure < P_0),
-            self.pump.Lchamber.P, self.pump.Rchamber.P, # Left and right chamber pressure
-            CHAMBER_LEN + self.pump.P_M, CHAMBER_LEN - self.pump.P_M,  # Chamber length
-            self.pump.P_M,
-            self.pump.valve[0], self.pump.valve[1], self.pump.valve[2], # pump valve states
-            ])
+        self.step_observation = np.array([self.goal_pressure, float(self.goal_pressure < P_0),
+                                self.pump.Lchamber.P, self.pump.Rchamber.P,
+                                CHAMBER_LEN + self.pump.P_M, CHAMBER_LEN - self.pump.P_M,  # chamber length
+                                self.pump.P_M,
+                                self.pump.valve[0], self.pump.valve[1], self.pump.valve[2],
+                                ])
         self.step_observation = self.normalization(self.step_observation)
         observation = np.concatenate((self.step_observation, self.step_observation)) # stack two observations
 
@@ -78,12 +77,12 @@ class PumpEnvVar(PumpEnv):
     
 if "__main__" == __name__:
     CM_2_M = 0.01
-    env = PumpEnvVar()
+    env = PumpEnvVar(var_L=0.02)
     env.reset()
     print(env.pump.Rchamber.V)
     env.render()
     
-    action=[+1.0, -1.0, -1.0, -1.0]
+    action=[+1.0, -1.0]
     env.step(action)
     env.render()
 
