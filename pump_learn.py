@@ -1,4 +1,4 @@
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, DDPG
 import os
 import time
 from pump_env import PumpEnv
@@ -19,7 +19,7 @@ env = PumpEnvVar(var_L_range=[0.0,0.02], goal_pressure_range=[1.1, 4.0])  # Set 
 env.reset()
 
 # Model
-model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logs_dir)
+model = DDPG("MlpPolicy", env, verbose=1, tensorboard_log=logs_dir)
 
 # Train and save every TIMESTEPS steps
 TIMESTEPS = 10000
