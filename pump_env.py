@@ -2,7 +2,8 @@ import gym
 from gym import spaces
 import numpy as np
 import random
-from pump_sim_dis import hybrid_pump
+# from pump_sim_dis import hybrid_pump
+from pump_sim_load import hybrid_pump
 
 
 P_0 = 1.01*1e5  # Pa
@@ -21,7 +22,7 @@ class PumpEnv(gym.Env):
         self.action_space = spaces.Box(low=-1, high=1,
                                             shape=(2,), dtype=np.float32)
         # Input observation:
-        dim_obs = 10
+        dim_obs = 11
         n_stack_obs = 2
         dim_stack_obs = int(dim_obs * n_stack_obs)
         self.observation_space = spaces.Box(low=-1.0, high=1.0,
@@ -32,6 +33,7 @@ class PumpEnv(gym.Env):
         self.goal_pressure_range = goal_pressure_range
         self.goal_pressure = 0
         self.prev_observation = np.zeros((dim_obs,))
+        self.load = 0.0
 
 
     def step(self, action):
@@ -88,6 +90,7 @@ class PumpEnv(gym.Env):
                                             CHAMBER_LEN + self.pump.P_M, CHAMBER_LEN - self.pump.P_M,
                                             self.pump.P_M,
                                             self.pump.valve[0], self.pump.valve[1], self.pump.valve[2],  # converge faster but not stable
+                                            self.load  # load
                                             ])
         # Normalize observation
         self.step_observation = self.normalization(self.step_observation)
@@ -99,16 +102,18 @@ class PumpEnv(gym.Env):
 
     def normalization(self, observation):
         # Normalize observation
-        goal_pressure_min = self.goal_pressure_range[0] * P_0
-        goal_pressure_max = self.goal_pressure_range[1] * P_0
+        goal_pressure_min = 0.05 * P_0
+        goal_pressure_max = 10 * P_0
+        val_L_min = 0.0
+        val_L_max = 2.0
         # observation_range_low = np.array([goal_pressure_min, 0.0, 0.05*P_0, 0.05*P_0, 6.031857e-05, 6.031857e-05, -0.05])
         # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.000185983, 0.000313, +0.05])
         # observation_range_low = np.array([goal_pressure_min, 0.0, 0.05*P_0, 0.05*P_0, 6.031857e-05, 6.031857e-05, -0.05])
         # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.0002626, 0.000440, +0.05])
         # observation_range_low = np.array([goal_pressure_min, 0.0, 0.05*P_0, 0.05*P_0, 0.049, 0.049, -0.05])
         # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05])
-        observation_range_low = np.array([goal_pressure_min, 0.0, 0.05*P_0, 0.05*P_0, 0.049, 0.049, -0.05, 0.0, 0.0, 0.0])
-        observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05, 1.0, 1.0, 1.0])
+        observation_range_low = np.array([goal_pressure_min, 0.0, 0.01*P_0, 0.01*P_0, 0.049, 0.049, -0.05, 0.0, 0.0, 0.0, val_L_min])
+        observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05, 1.0, 1.0, 1.0, val_L_max])
         norm_h, norm_l = 1.0, -1.0
         norm_observation = (observation - observation_range_low) / (observation_range_high - observation_range_low) * (norm_h - norm_l) + norm_l
         if ((norm_l <= norm_observation) & (norm_observation <= norm_h)).all():
@@ -140,6 +145,7 @@ class PumpEnv(gym.Env):
                                 CHAMBER_LEN + self.pump.P_M, CHAMBER_LEN - self.pump.P_M,  # chamber length
                                 self.pump.P_M,
                                 self.pump.valve[0], self.pump.valve[1], self.pump.valve[2],
+                                self.load  # load
                                 ])
         # Normalize observation
         self.step_observation = self.normalization(self.step_observation)
