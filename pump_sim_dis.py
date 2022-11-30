@@ -4,6 +4,7 @@ import math
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
+from resources.graphics import Graphics
 
 
 P_0 = 1.01*1e5  # Pa
@@ -20,6 +21,7 @@ class chamber:
         self.V = self.calculate_V()  # Volume of chamber
         self.P_prev = P0  # Pressure of chamber in previous step
         self.V_prev = self.V   # Volume of chamber in previous step
+
         return
     def calculate_V(self, L=None):
         if L is None:
@@ -62,21 +64,31 @@ class hybrid_pump:
         self.Rchamber_V_max = self.Rchamber.calculate_V(L_R + abs(self.P_M_L_Limitation))
         self.Lchamber_V_min = self.Lchamber.calculate_V(L_L - abs(self.P_M_L_Limitation))
         self.Rchamber_V_min = self.Rchamber.calculate_V(L_R - abs(self.P_M_R_Limitation))
-        
+        # self.graphics = Graphics() # not sure why cannot initialize together with hybrid pump :o
+
+
     def render(self, time=0):
+        # cv2.rectangle(self.img,(100,100),(100+int(0.2*MM_2_PX),100-10),(0,255,0),3)  # pump
+        # cv2.circle(self.img,(int(200+self.P_M*MM_2_PX),100-5),8,(255,0,0),-1)  # motor
+        # chamber length = int(0.2*MM_2_PX)
+        # motor position self.P_M * MM_2_PX
+        
+        # if self.valve[0] == 0:
+        #     cv2.circle(self.img,(90,100-5),3,(0,0,255),-1)  # IO0
+        # if self.valve[1] == 0:
+        #     cv2.circle(self.img,(310,100-5),3,(0,0,255),-1)   # IO1
+        # if self.valve[2] == 0:
+        #     cv2.circle(self.img,(200,100+10),3,(0,0,255),-1)  # IO2
+        
+        # cv2.putText(self.img,'Left P: \n {p:.2f}'.format(p=self.Lchamber.P/P_0),(250,90), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,0,0),1,cv2.LINE_AA)
+        # cv2.putText(self.img,'Right P: \n {p:.2f}'.format(p=self.Rchamber.P/P_0),(450,90), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,0,0),1,cv2.LINE_AA)
+
+        self.graphics = Graphics() # not sure why cannot initialize together with hybrid pump :o
         MM_2_PX = 1000
-        self.img = np.zeros((200,400,3),dtype='uint8')
-        cv2.rectangle(self.img,(100,100),(100+int(0.2*MM_2_PX),100-10),(0,255,0),3)  # pump
-        cv2.circle(self.img,(int(200+self.P_M*MM_2_PX),100-5),8,(255,0,0),-1)  # motor
-        if self.valve[0] == 0:
-            cv2.circle(self.img,(90,100-5),3,(0,0,255),-1)  # IO0
-        if self.valve[1] == 0:
-            cv2.circle(self.img,(310,100-5),3,(0,0,255),-1)   # IO1
-        if self.valve[2] == 0:
-            cv2.circle(self.img,(200,100+10),3,(0,0,255),-1)  # IO2
-        cv2.putText(self.img,'Left P: {p:.2f}'.format(p=self.Lchamber.P/P_0),(60,70), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.putText(self.img,'Right P: {p:.2f}'.format(p=self.Rchamber.P/P_0),(230,70), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.imshow('a',self.img)
+        self.graphics.render_valve_and_motor(self.valve, self.P_M*MM_2_PX)
+        self.graphics.add_text_to_image('Left P: \n {p:.2f}'.format(p=self.Lchamber.P/P_0), (270,90))
+        self.graphics.add_text_to_image('Right P: \n {p:.2f}'.format(p=self.Rchamber.P/P_0), (460,90))
+        cv2.imshow('a',self.graphics.display_image)
         cv2.waitKey(time)
 
     def open_L_valve(self):
@@ -141,10 +153,14 @@ if __name__ == '__main__':
     pump = hybrid_pump(L_L=0.1, L_R=0.1+0.1)
     print(pump.Lchamber_V_max, pump.Lchamber_V_min)
     print(pump.Rchamber_V_max, pump.Rchamber_V_min)
-    # pump.render()
-    # pump.move_motor_to_R(0.05)
-    # print(pump.Rchamber.P / P_0)
-    # pump.render()
+    pump.render()
+    pump.move_motor_to_R(0.05)
+    print(pump.Rchamber.P / P_0)
+    pump.render()
+    pump.move_motor_to_L(0.2)
+    pump.render()
+    pump.move_motor_to_R(0.1)
+    pump.render()
     '''
     pump = hybrid_pump(0.1, 0.1)
     pump.move_motor_to_L(0.05)

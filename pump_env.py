@@ -65,20 +65,30 @@ class PumpEnv(gym.Env):
         #     pass
         # else:
         #     print("Action[1] error")
-        pump_open_counter = 0
-        if action[1] > 0:
+        
+        # pump_open_counter = 0
+        # if action[1] > 0:
+        #     self.pump.open_R_valve()
+        #     pump_open_counter+=1
+        # if action[2] > 0:
+        #     self.pump.open_inner_valve()
+        #     pump_open_counter+=1
+        # if action[3] > 0:
+        #     self.pump.open_L_valve()
+        #     pump_open_counter+=1
+        # if pump_open_counter > 1:
+        #     self.reward = -100
+        # if pump_open_counter == 0:
+        #     self.reward = -100
+
+        pump_action = np.argmax(action[1:])
+        if pump_action == 0:
             self.pump.open_R_valve()
-            pump_open_counter+=1
-        if action[2] > 0:
+        if pump_action == 1:
             self.pump.open_inner_valve()
-            pump_open_counter+=1
-        if action[3] > 0:
+        if pump_action == 2:
             self.pump.open_L_valve()
-            pump_open_counter+=1
-        if pump_open_counter > 1:
-            self.reward = -100
-        if pump_open_counter == 0:
-            self.reward = -100
+
 
         # Check if the pump is done
         info = {}
