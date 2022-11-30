@@ -28,9 +28,9 @@ episodes = 1
 for ep in range(episodes):
     env.reset()
     # Set load and goal pressure
-    goal_pressure = np.random.random(size=None)*5 # random number between 0 to 1
-    obs = env.set_load_and_goal_pressure(var_L=0.012, goal_pressure=goal_pressure*P_0) # goal_pressure=2.62*P_0
-    # obs = env.set_load_and_goal_pressure(var_L=0.012, goal_pressure=2.62*P_0) # 
+    # goal_pressure = np.random.random(size=None)*5 # random number between 0 to 1
+    # obs = env.set_load_and_goal_pressure(var_L=0.012, goal_pressure=goal_pressure*P_0) # goal_pressure=2.62*P_0
+    obs = env.set_load_and_goal_pressure(var_L=0.012, goal_pressure=2.62*P_0) # 
 
     print("Goal pressure: {p:.2f}".format(p=env.goal_pressure/P_0), '=', env.goal_pressure, 'Pa')
     # env.pump.graphics.add_text_to_image("Goal pressure: {p1:.2f} = {p2:.2f} pa".format(p1=env.goal_pressure/P_0, p2=env.goal_pressure), (400,90))
