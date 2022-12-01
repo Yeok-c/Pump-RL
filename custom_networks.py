@@ -4,9 +4,10 @@ import gym
 import torch as th
 from torch import nn
 
-from stable_baselines3 import PPO
+from stable_baselines3 import DDPG
 from stable_baselines3.td3.policies import TD3Policy
 # from stable_baselines3.common.policies import ActorCriticPolicy
+from policy import MultiInputNet
 
 
 class CustomNetwork(nn.Module):
@@ -22,6 +23,7 @@ class CustomNetwork(nn.Module):
     def __init__(
         self,
         feature_dim: int,
+        calib_dim: int,
         last_layer_dim_pi: int = 64,
         last_layer_dim_vf: int = 64,
     ):
@@ -33,9 +35,13 @@ class CustomNetwork(nn.Module):
         self.latent_dim_vf = last_layer_dim_vf
 
         # Policy network
-        self.policy_net = nn.Sequential(
-            nn.Linear(feature_dim, last_layer_dim_pi), nn.ReLU()
-        )
+        self.policy_net = nn.Module(
+            MultiInputNet(feature_dim=feature_dim/2, calib_dim=feature_dim/2, output_dim=last_layer_dim_pi)
+            )
+        # self.policy_net = nn.Sequential(
+        #     nn.Linear(feature_dim, last_layer_dim_pi), nn.ReLU()
+        # )
+                
         # Value network
         self.value_net = nn.Sequential(
             nn.Linear(feature_dim, last_layer_dim_vf), nn.ReLU()
@@ -60,9 +66,9 @@ class CustomTD3Policy(TD3Policy): #ActorCriticPolicy
         self,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
-        lr_schedule: Callable[[float], float],
-        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
-        activation_fn: Type[nn.Module] = nn.Tanh,
+        # lr_schedule: Callable[[float], float],
+        # net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+        # activation_fn: Type[nn.Module] = nn.Tanh,
         *args,
         **kwargs,
     ):
@@ -70,9 +76,9 @@ class CustomTD3Policy(TD3Policy): #ActorCriticPolicy
         super(CustomTD3Policy, self).__init__(
             observation_space,
             action_space,
-            lr_schedule,
-            net_arch,
-            activation_fn,
+            # lr_schedule,
+            # net_arch,
+            # activation_fn,
             # Pass remaining arguments to base class
             *args,
             **kwargs,
@@ -84,5 +90,7 @@ class CustomTD3Policy(TD3Policy): #ActorCriticPolicy
         self.mlp_extractor = CustomNetwork(self.features_dim)
 
 
-# model = PPO(CustomActorCriticPolicy, "CartPole-v1", verbose=1)
-# model.learn(5000)
+# test code
+if __name__ == '__main__':
+    model = DDPG(CustomTD3Policy, "Pendulum-v1", verbose=1)
+    model.learn(5000) 
