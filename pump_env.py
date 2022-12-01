@@ -57,17 +57,19 @@ class PumpEnv(gym.Env):
             print("Action[0] error")
         
         #[Action 1]: Valve  (Change P_M first)
-        if action[1] > 0.5 and action[1] <= 1:
-            self.pump.open_R_valve()
-        elif action[1] > 0:
-            self.pump.open_inner_valve()
-        elif action[1] > -0.5:
-            self.pump.open_L_valve()
-        elif action[1] >= -1:
-            pass
-        else:
-            print("Action[1] error")
+        # if action[1] > 0.5 and action[1] <= 1:
+        #     self.pump.open_R_valve()
+        # elif action[1] > 0:
+        #     self.pump.open_inner_valve()
+        # elif action[1] > -0.5:
+        #     self.pump.open_L_valve()
+        # elif action[1] >= -1:
+        #     pass
+        # else:
+        #     print("Action[1] error")
         
+
+
         # Check if the pump is done
         info = {}
         done_threshold = 0.01

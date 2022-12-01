@@ -18,7 +18,7 @@ class PumpEnvVar(PumpEnv):
         # super(PumpEnv, self).__init__()
         # Continuous actions
         self.action_space = spaces.Box(low=-1, high=1,
-                                            shape=(2,), dtype=np.float32)
+                                            shape=(4,), dtype=np.float32)
         # Input observation:
         dim_obs = 11
         n_stack_obs = 2
