@@ -6,7 +6,6 @@ from pump_env_variable_load import PumpEnvVar
 from stable_baselines3.common.env_util import make_vec_env
 
 from custom_networks import CustomTD3Policy
-from stable_baselines3.common.env_util import make_vec_env
 
 # Create dirs
 models_dir = f"models/{int(time.time())}"
@@ -25,10 +24,6 @@ env = PumpEnvVar(load_range=[0.0,2.0], goal_pressure_range=[1.1, 2.0])
 env.reset()
 
 
-# policy_kwargs = dict(
-#     features_extractor_class=CustomCombinedExtractor,
-#     features_extractor_kwargs=dict(features_dim=128),
-# )
 
 # Model
 # model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logs_dir)

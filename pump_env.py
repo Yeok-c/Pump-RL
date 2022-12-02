@@ -1,6 +1,7 @@
 import gym
 from gym import spaces
 import numpy as np
+import torch
 import random
 # from pump_sim_dis import hybrid_pump
 from pump_sim_load import hybrid_pump
@@ -68,7 +69,13 @@ class PumpEnv(gym.Env):
         # else:
         #     print("Action[1] error")
         
-
+        pump_action = np.argmax(action[1:])
+        if pump_action == 0:
+            self.pump.open_R_valve()
+        if pump_action == 1:
+            self.pump.open_inner_valve()
+        if pump_action == 2:
+            self.pump.open_L_valve()
 
         # Check if the pump is done
         info = {}
