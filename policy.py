@@ -6,11 +6,13 @@ import torch.nn.functional as F
 class MultiInputNet(nn.Module):
     def __init__(self, feature_dim=10, calib_dim=5, output_dim=5):
         super().__init__()
-        self.fc_f1 = nn.Linear(feature_dim, 64) #supose your input shape is 100
+        self.fc_f1 = nn.Linear(feature_dim, 32) #supose your input shape is 100
+        self.fc_f2 = nn.Linear(32, 64) #supose your input shape is 100
         self.fc_f2 = nn.Linear(64, 64) #supose your input shape is 100
-        self.fc_c1 = nn.Linear(calib_dim, 64)
-        self.fc_c2 = nn.Linear(64, 64)
-        self.fc3 = nn.Linear(128, output_dim)
+        self.fc_f2 = nn.Linear(64, 32) #supose your input shape is 100
+        self.fc_c1 = nn.Linear(calib_dim, 32)
+        self.fc_c2 = nn.Linear(32, 32)
+        self.fc3 = nn.Linear(64, output_dim)
 
     def forward(self, input_layer_f, input_layer_c):
         x = F.relu(self.fc_f1(input_layer_f))

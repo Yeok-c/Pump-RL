@@ -20,7 +20,7 @@ class PumpEnvVar(PumpEnv):
         self.action_space = spaces.Box(low=-1, high=1,
                                             shape=(4,), dtype=np.float32)
         # Input observation:
-        dim_obs = 11
+        dim_obs = 10 # 11
         self.n_stack_obs = 2
         dim_stack_obs = int(dim_obs * self.n_stack_obs)
 
@@ -44,10 +44,16 @@ class PumpEnvVar(PumpEnv):
                                             CHAMBER_LEN + self.pump.P_M, CHAMBER_LEN - self.pump.P_M,  # chamber length
                                             self.pump.P_M,
                                             self.pump.valve[0], self.pump.valve[1], self.pump.valve[2],
-                                            self.load  # load
+                                            # self.load  # load
                                             ])
         step_observation = self.normalization(step_observation)
         return step_observation
+
+    def get_random_load(self):
+        return random.uniform(self.load_range[0],self.load_range[1])
+
+    def get_random_goal(self):
+        return random.uniform(self.goal_pressure_range[0], self.goal_pressure_range[1]) * P_0
 
     def reset(self):
         ## Initialization
@@ -58,16 +64,17 @@ class PumpEnvVar(PumpEnv):
         self.calibration_observations = None
 
         # Pump initialization with random load
-        self.load = random.uniform(self.load_range[0],self.load_range[1])
+        self.load = self.get_random_load()
         self.pump = hybrid_pump(L_L=CHAMBER_LEN, L_R=CHAMBER_LEN, load=self.load)  # train with random load
         
         # Set random goal pressure
-        self.goal_pressure = random.uniform(self.goal_pressure_range[0], self.goal_pressure_range[1]) * P_0
+        self.goal_pressure = self.get_random_goal()
 
         # Calculate and return observations
         self.step_observation = self.calculate_step_observations()
         # observation = np.concatenate((self.step_observation, self.step_observation)) # stack two observations
         self.calibration_observations = self.get_calibration_observations()
+        self.reward = 0
         return np.concatenate((self.calibration_observations,self.calibration_observations)) 
     
 
@@ -127,27 +134,41 @@ class PumpEnvVar(PumpEnv):
         
         # Calculate observation
         prev_observation = self.step_observation
-        self.step_observation = np.array([self.goal_pressure, float(self.goal_pressure < P_0),
-                                            self.pump.Lchamber.P, self.pump.Rchamber.P, 
-                                            # self.pump.Lchamber.V, self.pump.Rchamber.V,  # V is not available in the real pump
-                                            CHAMBER_LEN + self.pump.P_M, CHAMBER_LEN - self.pump.P_M,
-                                            self.pump.P_M,
-                                            self.pump.valve[0], self.pump.valve[1], self.pump.valve[2],  # converge faster but not stable
-                                            self.load  # load
-                                            ])
-        # Normalize observation
-        self.step_observation = self.normalization(self.step_observation)
+        self.step_observation = self.calculate_step_observations()
         # Stack 2 frames (can make convergence faster)
-
         try:
             if self.calibration_observations == None: # if not yet done calibration
                 observation = np.concatenate((prev_observation, self.step_observation, prev_observation, self.step_observation))
         except: # if already done calibration
             observation = np.concatenate((prev_observation, self.step_observation, self.calibration_observations))
-            
-        
         
         return observation, self.reward, self.done, info
+
+
+    def normalization(self, observation):
+        # Normalize observation
+        goal_pressure_min = 0.05 * P_0
+        goal_pressure_max = 10 * P_0
+        val_L_min = 0.0
+        val_L_max = 2.0
+        # observation_range_low = np.array([goal_pressure_min, 0.0, 0.05*P_0, 0.05*P_0, 6.031857e-05, 6.031857e-05, -0.05])
+        # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.000185983, 0.000313, +0.05])
+        # observation_range_low = np.array([goal_pressure_min, 0.0, 0.05*P_0, 0.05*P_0, 6.031857e-05, 6.031857e-05, -0.05])
+        # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.0002626, 0.000440, +0.05])
+        # observation_range_low = np.array([goal_pressure_min, 0.0, 0.05*P_0, 0.05*P_0, 0.049, 0.049, -0.05])
+        # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05])
+        observation_range_low = np.array([goal_pressure_min, 0.0, 0.01*P_0, 0.01*P_0, 0.049, 0.049, -0.05, 0.0, 0.0, 0.0])
+        observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05, 1.0, 1.0, 1.0])
+        norm_h, norm_l = 1.0, -1.0
+        norm_observation = (observation - observation_range_low) / (observation_range_high - observation_range_low) * (norm_h - norm_l) + norm_l
+        if ((norm_l <= norm_observation) & (norm_observation <= norm_h)).all():
+            pass
+        else:
+            print("obs:", observation)
+            print("norm_obs:", norm_observation)
+            raise Exception("Normalization error")
+        return norm_observation
+
 
     def get_calibration_observations(self):
         self.step(np.array([0.5, 0, 0, 0]))
@@ -163,7 +184,7 @@ class PumpEnvVar(PumpEnv):
         self.pump = hybrid_pump(L_L=CHAMBER_LEN, L_R=CHAMBER_LEN, load=load)
         self.goal_pressure = goal_pressure
         self.step_observation = self.calculate_step_observations()
-        observation = np.concatenate((self.step_observation, self.step_observation))
+        observation = np.concatenate((self.step_observation, self.step_observation, self.step_observation, self.step_observation))
         return observation
 
     

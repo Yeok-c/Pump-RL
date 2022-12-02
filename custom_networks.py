@@ -86,9 +86,28 @@ class CustomTD3Policy(TD3Policy): #ActorCriticPolicy
         # Disable orthogonal initialization
         self.ortho_init = False
 
+    # def make_actor(self) -> None:
+    #     self.mlp_extractor = CustomNetwork(self.features_dim)
+    #     pass
+
+    # def _build_mlp_extractor(self) -> None:
+    #     """
+    #     Create the policy and value networks.
+    #     Part of the layers can be shared.
+    #     """
+    #     # Note: If net_arch is None and some features extractor is used,
+    #     #       net_arch here is an empty list and mlp_extractor does not
+    #     #       really contain any layers (acts like an identity module).
+    #     self.mlp_extractor = MlpExtractor(
+    #         self.features_dim,
+    #         net_arch=self.net_arch,
+    #         activation_fn=self.activation_fn,
+    #         device=self.device,
+    #     )
+
+    # Turned into
     def _build_mlp_extractor(self) -> None:
         self.mlp_extractor = CustomNetwork(self.features_dim)
-
 
 # test code
 if __name__ == '__main__':
