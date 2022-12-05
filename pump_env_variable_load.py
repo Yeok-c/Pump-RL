@@ -108,9 +108,9 @@ class PumpEnvVar(PumpEnv):
 
         prev_valve_action = self.valve_action
         # +1 to offset to index start of 1 and not 0, 0 reserved for all closed
-        self.valve_action = np.argmax(action[1:]) + 1 
+        self.valve_action = np.argmax(action[1:])
+
         if self.valve_action == 0:
-            # Reset valve for visualization
             self.pump.close_R_valve()
             self.pump.close_L_valve()
             self.pump.close_inner_valve()

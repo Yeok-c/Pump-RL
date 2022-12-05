@@ -12,8 +12,8 @@ env.reset()
 
 # Load the trained agent
 model_dir = "models"
-model_run = "1670222220" #"1670211944"
-model_step = "10000"
+model_run = "1670221230" #"1670211944"
+model_step = "690000"
 model_path = f"{model_dir}/{model_run}/{model_step}"  # for var load experiment
 model = PPO.load(model_path, env=env, print_system_info=True)
 
