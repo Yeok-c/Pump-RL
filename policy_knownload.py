@@ -69,7 +69,7 @@ from torch import nn
 import torch.nn.functional as F
 
 class MultiInputNet(nn.Module):
-    def __init__(self, feature_dim=50, embedding_dim=20, output_dim=1):
+    def __init__(self, feature_dim=55, embedding_dim=22, output_dim=1):
         super().__init__()
         self.input_layer_f_length = feature_dim-embedding_dim # int(feature_dim/2)
         self.input_layer_c_length = embedding_dim # feature_dim - self.input_layer_f_length
