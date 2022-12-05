@@ -36,7 +36,7 @@ TIMESTEPS = 10000
 for i in range(1,int(800000/TIMESTEPS)):
     # Turn off "reset_num_timesteps" so that the learning won't stop
     # model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name="PPO", progress_bar=True)
-    model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name="PPO_Load_unknown_punish_loss_bonus_finish", progress_bar=True)
+    model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name="PPO_Load_unknown_end_bonus", progress_bar=True)
     
     # Save the model every {TIMESTEPS} steps
     model.save(f"{models_dir}/{TIMESTEPS*i}")

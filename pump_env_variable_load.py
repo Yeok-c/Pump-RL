@@ -134,7 +134,7 @@ class PumpEnvVar(PumpEnv):
         # if prev_valve_action != self.valve_action:
         #     pass
         # else: # no valve changed
-        #     self.reward += -1.0
+        #     self.reward += -0.5
 
         # Check if the pump is done
         info = {}
@@ -146,12 +146,12 @@ class PumpEnvVar(PumpEnv):
         # else: # going in wrong direction
         #     self.reward += -1
         
-        self.reward += -0.01*self.loss
+        # self.reward += -0.01*self.loss
 
         done_threshold = 0.01
         if self.loss/self.goal_pressure < done_threshold:
             self.done = True
-            self.reward += 30.0
+            self.reward += 10.0
         elif self.action_counter > MAX_STEP:
             self.done = True
             self.reward += -1.0
