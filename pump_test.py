@@ -12,8 +12,8 @@ env.reset()
 
 # Load the trained agent
 model_dir = "models"
-model_run = "1670211944"
-model_step = "790000"
+model_run = "1670222220" #"1670211944"
+model_step = "10000"
 model_path = f"{model_dir}/{model_run}/{model_step}"  # for var load experiment
 model = PPO.load(model_path, env=env, print_system_info=True)
 
@@ -21,13 +21,15 @@ model = PPO.load(model_path, env=env, print_system_info=True)
 mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
 print(f"mean_reward:{mean_reward:.2f} +/- {std_reward}\n")
 
+
+
 # Enjoy trained agent
 episodes = 1
-for ep in range(episodes):
+for ep in range(episodes):   
     env.reset()
     # Set load and goal pressure
-    obs = env.set_load_and_goal_pressure(load=env.get_random_load(), goal_pressure=env.get_random_goal())
-    # obs = env.set_load_and_goal_pressure(load=1.5, goal_pressure=1.85*P_0)
+    # obs = env.set_load_and_goal_pressure(load=env.get_random_load(), goal_pressure=env.get_random_goal())
+    obs = env.set_load_and_goal_pressure(load=1.5, goal_pressure=1.85*P_0)
     print('env.load', env.load, 'env.goal_pressure', env.goal_pressure/P_0)
     print("Goal pressure: {p:.2f}".format(p=env.goal_pressure/P_0), '=', env.goal_pressure, 'Pa')
     # Start simulation

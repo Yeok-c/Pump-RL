@@ -18,7 +18,7 @@ class PumpEnvVar(PumpEnv):
         # super(PumpEnv, self).__init__()
         # Continuous actions
         self.action_space = spaces.Box(low=-1, high=1,
-                                            shape=(4,), dtype=np.float32)
+                                            shape=(5,), dtype=np.float32)
         # Input observation:
         dim_obs = 10 # 11
         self.n_stack_obs = 2
@@ -62,7 +62,8 @@ class PumpEnvVar(PumpEnv):
         self.prev_shaping = None
         self.action_counter = 0
         self.calibration_observations = None
-
+        self.valve_action = 0
+        self.loss = 999
         # Pump initialization with random load
         self.load = self.get_random_load()
         self.pump = hybrid_pump(L_L=CHAMBER_LEN, L_R=CHAMBER_LEN, load=self.load)  # train with random load
@@ -81,11 +82,6 @@ class PumpEnvVar(PumpEnv):
     def step(self, action):
         # Execute one time step within the environment
         self.action_counter += 1
-
-        # Reset valve for visualization
-        self.pump.close_R_valve()
-        self.pump.close_L_valve()
-        self.pump.close_inner_valve()
 
         # [Action 0]: P_M
         prev_P_M = self.pump.P_M
@@ -109,28 +105,60 @@ class PumpEnvVar(PumpEnv):
         #     pass
         # else:
         #     print("Action[1] error")
-        
-        pump_action = np.argmax(action[1:])
-        if pump_action == 0:
+
+        prev_valve_action = self.valve_action
+        # +1 to offset to index start of 1 and not 0, 0 reserved for all closed
+        self.valve_action = np.argmax(action[1:]) + 1 
+        if self.valve_action == 0:
+            # Reset valve for visualization
+            self.pump.close_R_valve()
+            self.pump.close_L_valve()
+            self.pump.close_inner_valve()
+
+        if self.valve_action == 1:
             self.pump.open_R_valve()
-        if pump_action == 1:
-            self.pump.open_inner_valve()
-        if pump_action == 2:
+            self.pump.close_L_valve()
+            self.pump.close_inner_valve()
+
+        if self.valve_action == 2:
+            self.pump.close_R_valve()
             self.pump.open_L_valve()
+            self.pump.close_inner_valve()
+
+        if self.valve_action == 3:
+            self.pump.close_R_valve()
+            self.pump.close_L_valve()
+            self.pump.open_inner_valve()
+        
+        # # If valve changed - don't punish
+        # if prev_valve_action != self.valve_action:
+        #     pass
+        # else: # no valve changed
+        #     self.reward += -1.0
 
         # Check if the pump is done
         info = {}
+        prev_loss = self.loss
+        self.loss = abs(self.pump.Rchamber.P - self.goal_pressure)
+
+        # if self.loss < prev_loss: # if prev loss is larger than current loss
+        #     pass
+        # else: # going in wrong direction
+        #     self.reward += -1
+        
+        self.reward += -0.01*self.loss
+
         done_threshold = 0.01
-        if abs(self.pump.Rchamber.P - self.goal_pressure)/self.goal_pressure < done_threshold:
+        if self.loss/self.goal_pressure < done_threshold:
             self.done = True
-            self.reward = 0.0
+            self.reward += 30.0
         elif self.action_counter > MAX_STEP:
             self.done = True
-            self.reward = -1.0
+            self.reward += -1.0
             info["episode_timeout"] = True
         else:
             self.done = False
-            self.reward = -1.0
+            self.reward += -1.0
         
         # Calculate observation
         prev_observation = self.step_observation
