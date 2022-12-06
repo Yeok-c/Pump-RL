@@ -82,6 +82,11 @@ class PumpEnvVar(PumpEnv):
     def step(self, action):
         # Execute one time step within the environment
         self.action_counter += 1
+        self.reward=0
+
+        self.pump.close_R_valve()
+        self.pump.close_L_valve()
+        self.pump.close_inner_valve()
 
         # [Action 0]: P_M
         prev_P_M = self.pump.P_M
@@ -94,21 +99,21 @@ class PumpEnvVar(PumpEnv):
         else:
             print("Action[0] error")
         
-        #[Action 1]: Valve  (Change P_M first)
-        # if action[1] > 0.5 and action[1] <= 1:
+        # # [Action 1]: Valve  (Change P_M first)
+        # if action[1] > 0.5 and action[1] <= 1: # 0.5 - 1
         #     self.pump.open_R_valve()
-        # elif action[1] > 0:
+        # elif action[1] > 0:                    # 0 - 0.5
         #     self.pump.open_inner_valve()
-        # elif action[1] > -0.5:
+        # elif action[1] > -0.5:                 # -0.5 - 0
         #     self.pump.open_L_valve()
-        # elif action[1] >= -1:
-        #     pass
+        # elif action[1] >= -1:                  # -1 - -0.5 
+        #     pass # let all valves remain closed
         # else:
         #     print("Action[1] error")
 
-        prev_valve_action = self.valve_action
+        # prev_valve_action = self.valve_action
         # +1 to offset to index start of 1 and not 0, 0 reserved for all closed
-        self.valve_action = np.argmax(action[1:])
+        # self.valve_action = np.argmax(action[1:])
 
         if self.valve_action == 0:
             self.pump.close_R_valve()
@@ -151,7 +156,7 @@ class PumpEnvVar(PumpEnv):
         done_threshold = 0.01
         if self.loss/self.goal_pressure < done_threshold:
             self.done = True
-            self.reward += 10.0
+            self.reward += 0.0
         elif self.action_counter > MAX_STEP:
             self.done = True
             self.reward += -1.0
@@ -186,7 +191,8 @@ class PumpEnvVar(PumpEnv):
         # observation_range_low = np.array([goal_pressure_min, 0.0, 0.05*P_0, 0.05*P_0, 0.049, 0.049, -0.05])
         # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05])
         observation_range_low = np.array([goal_pressure_min, 0.0, 0.01*P_0, 0.01*P_0, 0.049, 0.049, -0.05, 0.0, 0.0, 0.0])
-        observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05, 1.0, 1.0, 1.0])
+        observation_range_high = np.array([goal_pressure_max, 1.0, 10.01*P_0, 10.01*P_0, 0.151, 0.151, +0.05, 1.0, 1.0, 1.0])
+        # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05, 1.0, 1.0, 1.0])
         norm_h, norm_l = 1.0, -1.0
         norm_observation = (observation - observation_range_low) / (observation_range_high - observation_range_low) * (norm_h - norm_l) + norm_l
         if ((norm_l <= norm_observation) & (norm_observation <= norm_h)).all():

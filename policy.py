@@ -75,20 +75,21 @@ class MultiInputNet(nn.Module):
         self.input_layer_c_length = embedding_dim # feature_dim - self.input_layer_f_length
 
         self.fc_f1 = nn.Linear(self.input_layer_f_length, 32) #supose your input shape is 100
-        self.fc_f2 = nn.Linear(32, 64) #supose your input shape is 100
-        self.fc_f3 = nn.Linear(64, 64) #supose your input shape is 100
-        self.fc_f4 = nn.Linear(64, 32) #supose your input shape is 100
+        # self.fc_f2 = nn.Linear(32, 64) #supose your input shape is 100
+        # self.fc_f3 = nn.Linear(64, 64) #supose your input shape is 100
+        self.fc_f4 = nn.Linear(32, 32) #supose your input shape is 100
 
         self.fc_c1 = nn.Linear(self.input_layer_c_length, 32)
         self.fc_c2 = nn.Linear(32, 32)
         
         self.fc = nn.Linear(64, output_dim)
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, input_layer):
         x = F.relu(self.fc_f1(input_layer[:,:self.input_layer_f_length]))
         # x = F.relu(self.fc_f1(torch.squeeze(input_layer[:,:self.input_layer_f_length], 0)))
-        x = F.relu(self.fc_f2(x))
-        x = F.relu(self.fc_f3(x))
+        # x = F.relu(self.fc_f2(x))
+        # x = F.relu(self.fc_f3(x))
         x = F.relu(self.fc_f4(x))
 
         y = F.relu(self.fc_c1(input_layer[:,self.input_layer_f_length:]))
@@ -97,6 +98,9 @@ class MultiInputNet(nn.Module):
 
         x = torch.cat((x, y), dim=1)
         x = self.fc(x)
+
+        x[:,1:] = self.softmax(x[:,1:])
+        
         return x
 
 

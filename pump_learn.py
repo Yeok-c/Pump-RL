@@ -27,16 +27,24 @@ env.reset()
 
 # Model
 model = PPO(CustomActorCriticPolicy, env, verbose=1, tensorboard_log=logs_dir)
-# model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logs_dir)
+# model = DDPG("MlpPolicy", env, verbose=1, tensorboard_log=logs_dir)
 # model = DDPG("MlpPolicy", env, verbose=1, tensorboard_log=logs_dir)
 # model = DDPG(CustomTD3Policy, env, verbose=1, tensorboard_log=logs_dir)
 
+
+# model_dir = "models"
+# model_run = "1670316008" #"1670211944"
+# model_step = "110000"
+# model_path = f"{model_dir}/{model_run}/{model_step}"  # for var load experiment
+# model = DDPG.load(model_path, env=env, print_system_info=True)
+
+
 # Train and save every TIMESTEPS steps
 TIMESTEPS = 10000
-for i in range(1,int(800000/TIMESTEPS)):
+for i in range(1,int(8000000/TIMESTEPS)):
     # Turn off "reset_num_timesteps" so that the learning won't stop
     # model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name="PPO", progress_bar=True)
-    model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name="PPO_Load_unknown_end_bonus", progress_bar=True)
+    model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name="PPO", progress_bar=True)
     
     # Save the model every {TIMESTEPS} steps
     model.save(f"{models_dir}/{TIMESTEPS*i}")
