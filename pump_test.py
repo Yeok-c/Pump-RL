@@ -12,10 +12,10 @@ env.reset()
 
 # Load the trained agent
 model_dir = "models"
-model_run = "1669712228"
-model_step = "750000"
+model_run = "1670380449"
+model_step = "2900000"
 model_path = f"{model_dir}/{model_run}/{model_step}"  # for var load experiment
-model = DDPG.load(model_path, env=env, print_system_info=True)
+model = PPO.load(model_path, env=env, print_system_info=True)
 
 # Evaluate the agent
 mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
