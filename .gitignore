@@ -3,3 +3,4 @@ logs
 models
 scp_.sh
 send_.exp
+*.zip

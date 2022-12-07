@@ -8,8 +8,8 @@ from stable_baselines3.common.env_util import make_vec_env
 
 # Create dirs
 models_dir = f"models/{int(time.time())}"
-logs_dir = f"logs/{int(time.time())}"
-logname = "DDPG_Vanilla"
+logs_dir = f"../logs/{int(time.time())}"
+logname = "PPO_Vanilla"
 
 if not os.path.exists(models_dir):
     os.makedirs(models_dir)
@@ -33,8 +33,8 @@ model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logs_dir)
 # model = PPO.load(model_path, env=env, print_system_info=True)
 
 # Train and save every TIMESTEPS steps
-TIMESTEPS = 10000
-for i in range(1,int(20000/TIMESTEPS)):
+TIMESTEPS = 100000
+for i in range(1,int(10*1000000/TIMESTEPS)):
     # Turn off "reset_num_timesteps" so that the learning won't stop
     model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=logname, progress_bar=True)
     
