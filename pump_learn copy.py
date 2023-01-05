@@ -1,5 +1,4 @@
 from stable_baselines3 import PPO, DDPG, TD3, SAC
-from stable_baselines3.common.noise import NormalActionNoise
 import os, sys, getopt, time
 from pump_env_variable_load_two_DRA import PumpEnvVar_Two
 from scripts.get_args import get_args
@@ -12,14 +11,14 @@ from summary_writer import SummaryWriterCallback
 # if no arguments are set then the following defaults are used
 
 def get_args(argv):
-    noise = 0.02
+    noise = 0.05
     dra_schedule = 0 # 0 constant
     goal_range_low = 0.3
-    goal_range_high = 2.0 #[2.0, 4.0]
+    goal_range_high = 3.0
     load_vol_range_low = 0
     load_vol_range_high = 2.0
     gamma = 0.92
-    timesteps = 20*1000000
+    timesteps = 50*1000000
 
     opts, args = getopt.getopt(argv,"hi:o:",[
     "noise=","dra_schedule=", 
@@ -113,14 +112,14 @@ if __name__ == "__main__":
         "MlpPolicy",
         env, verbose=1, 
         tensorboard_log=logs_dir, 
+        
         gamma=0.92,
-        batch_size=512,
+        # action_noise=0.01,
+        batch_size=2048,
         # learning_rate=linear_schedule(0.001),
         policy_kwargs=policy_kwargs,
-        # action_noise=NormalActionNoise(0, 0.02),
     )
 
-    print("Actor: ", model.actor.latent_pi)
     SCHED_TIMESTEPS = 100000
     SAVE_TIMESTEPS = SCHED_TIMESTEPS*10
     TOTAL_TIMESTEPS = timesteps # 50*1000000
@@ -129,19 +128,12 @@ if __name__ == "__main__":
     for i in range(0, TOTAL_TIMESTEPS, SAVE_TIMESTEPS):
         for j in range(0, SAVE_TIMESTEPS, SCHED_TIMESTEPS):
             progress = (i+j)/TOTAL_TIMESTEPS
-            # training_noise = progress*noise
-
             if dra_schedule == 1:
                 training_noise = progress*noise
             elif dra_schedule == 0: # no schedule, constant
                 training_noise = noise
-            
-            # Scheduled goal_pressure_H 
-            # goal_pressure_H_=goal_pressure_H[0]+(goal_pressure_H[1]-goal_pressure_H[0])*progress
-            # goal_pressure_H_ = 3.0 # goal_pressure_H[0]
-            # print("Current progress:{}, noise: {}".format(progress, noise))
-            # print("Current progress:{}, goal_pressure_H_: {}".format(progress, goal_pressure_H_))
-            
+            print("Current progress:{}, noise: {}".format(progress, noise))
+
             env = PumpEnvVar_Two(
                 load_range=[load_range_L, load_range_H], 
                 goal_pressure_R_range=[goal_pressure_L, goal_pressure_H],
