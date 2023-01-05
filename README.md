@@ -38,7 +38,7 @@ e.g., "0.5" means current piston is at +0.5 mm
 ```
 
 ### 3. Set piston position
-+ Python code uses **set_position** string to move the piston
++ Python code uses **setPosition** string to move the piston
 ```
 udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
 udp.send("setPosition,"+str(position))
@@ -58,7 +58,7 @@ When motor finishes, C code will return a string "moving done" to Python code.
 ```
 
 ### 4. Get valve states
-+ Python code uses **get_valves** string to get valve states
++ Python code uses **getValve** string to get valve states
 ```
 udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
 udp.send("getValve")
