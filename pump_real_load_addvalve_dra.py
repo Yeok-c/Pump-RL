@@ -210,8 +210,11 @@ class real_pump:
         # Wait for moving done
         IO_done = False
         while IO_done == False:
+            time.sleep(0.1)
             rc = self.udp.recieve()
-            if rc == "IO done":
+            rc = rc[2:-1]
+            print(rc)
+            if rc == 'IO done':
                 IO_done = True
         self.get_valves()
         return
@@ -327,7 +330,6 @@ class real_pump:
             # self.Rchamber.change_length(-dL)
             self.set_position(self.P_M)
         return
-
 
 
 if __name__ == '__main__':
