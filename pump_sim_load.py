@@ -10,7 +10,7 @@ P_0 = 1.01*1e5  # Pa
 
 
 class chamber:
-    def __init__(self, L0, P0):
+    def __init__(self, L0, P0, load=0):
         # self.radius = 0.02  # Radius of chamber
         self.a = 0.03  # The short edge of chamber cross surface
         self.c = 0.03  # The long edge of chamber cross surface
@@ -20,45 +20,24 @@ class chamber:
         self.V = self.calculate_V()  # Volume of chamber
         self.P_prev = P0  # Pressure of chamber in previous step
         self.V_prev = self.V   # Volume of chamber in previous step
+        self.load_V = load * self.V  # Volume of load = length scale * original chamber volume 
         return
-        
     def calculate_V(self, L=None):
         if L is None:
             L = self.L
         # Calculate the volume of chamber (V) by the length (L)
         compensate = -2.5E-06
-        a = self.a*100
-        c = self.c*100
-        L = L*100
-
         h = L / self.n / 2
-        V_seg = 2 * a * a * h + math.sqrt(2) * a * c * h
-        # V_seg = 2 * self.a * self.a * h + math.sqrt(2) * self.a * self.c * h
-        V_seg = V_seg + (math.sqrt(2) * a + 2.0/3 * c) * math.sqrt(c*c - 2*h*h) * h
-        # V = self.n * V_seg + compensate
-        V = self.n * V_seg 
-        V = V/1000000 + compensate
+        V_seg = 2 * self.a * self.a * h + math.sqrt(2) * self.a * self.c * h
+        V_seg = V_seg + (math.sqrt(2) * self.a + 2.0/3 * self.c) * math.sqrt(self.c*self.c - 2*h*h) * h
+        V = self.n * V_seg + compensate
         return V
-    # def calculate_V(self, L=None):
-    #     if L is None:
-    #         L = self.L
-    #     # Calculate the volume of chamber (V) by the length (L)
-    #     compensate = -2.5E-06
-    #     h = L / self.n / 2
-    #     V = 2 * self.a * self.a * h + math.sqrt(2) * self.a * self.c * h
-    #     V = V + (math.sqrt(2) * self.a + 2.0/3 * self.c) * math.sqrt(self.c*self.c - 2*h*h) * h
-    #     # V = V + (math.sqrt(2) * self.a + 2.0/3 * self.c) * math.sqrt((self.c+math.sqrt(2)*h)*(self.c-math.sqrt(2)*h)) * h
-    #     V = V/1000000
-    #     return self.n * V + compensate
-
     def calculate_P(self):
         # Calculate the pressure of chamber (P) by the volume (V)
-        return self.P_prev * self.V_prev / self.V
+        return self.P_prev * (self.V_prev + self.load_V) / (self.V + self.load_V)
     def change_length(self, dL):
         self.V_prev = self.V
         self.P_prev = self.P
-        if self.L + dL < 0:
-            print("Length error", "prev L:", self.L, ".And the dL is", dL, 'resulting L:', self.L + dL)
         self.L = self.L + dL
         self.V = self.calculate_V()  # update V
         self.P = self.calculate_P()  # update P
@@ -68,12 +47,12 @@ class chamber:
 # /\  |——————|  /\  |——————|  /\
 # IO0  VL, PL   IO1  VR, PR   IO2
 class hybrid_pump:
-    def __init__(self, L_L, L_R):
+    def __init__(self, L_L, L_R, load):
         self.P_M = 0  # motor
         self.P_M_L_Limitation = -0.05
         self.P_M_R_Limitation = +0.05
         self.Lchamber = chamber(L_L, P_0)
-        self.Rchamber = chamber(L_R, P_0)
+        self.Rchamber = chamber(L_R, P_0, load)
         self.valve = [0,0,0]  # 0: close, 1: open  # L, R, inner
         self.Lchamber_V_max = self.Lchamber.calculate_V(L_L + abs(self.P_M_R_Limitation))
         self.Rchamber_V_max = self.Rchamber.calculate_V(L_R + abs(self.P_M_L_Limitation))
@@ -155,9 +134,13 @@ class simulator:
 
 
 if __name__ == '__main__':
-    pump = hybrid_pump(L_L=0.1, L_R=0.1+0.1)
-    print(pump.Lchamber_V_max, pump.Lchamber_V_min)
-    print(pump.Rchamber_V_max, pump.Rchamber_V_min)
+    pump = hybrid_pump(L_L=0.1, L_R=0.1, load=0.5)
+    pump.move_motor_to_R(0.05)
+    # print('Pressure_L',pump.Lchamber.P/P_0)
+    print('Pressure_R',pump.Rchamber.P/P_0, 3/2)
+    
+    # print(pump.Lchamber_V_max, pump.Lchamber_V_min)
+    # print(pump.Rchamber_V_max, pump.Rchamber_V_min)
     # pump.render()
     # pump.move_motor_to_R(0.05)
     # print(pump.Rchamber.P / P_0)
@@ -168,6 +151,7 @@ if __name__ == '__main__':
     pump.open_L_valve()
     pump.close_L_valve()
     print('start:', 'self.pump.Lchamber.P:', pump.Lchamber.P, 'self.pump.Rchamber.P:', pump.Rchamber.P)
+
     # step 
     actions = np.array([[-0.11293268, -1.        ], [-0.73517716, -0.40774852], [ 1.        , -0.11729856], [ 0.3907593, -1.        ], [-0.68165046,  0.1595722 ], [0.4569448 , 0.09706157 ], [-0.87153196, -0.5983197 ]])
     for action in actions:
@@ -215,15 +199,18 @@ if __name__ == '__main__':
     print(pump.P_M)
     print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
     pump.render()
+
     pump.move_motor_to_R(0.06)
     print('?',pump.P_M)
     print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
     pump.render()
+
     pump.move_motor_to_R(0.05)
     print(pump.P_M)
     print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
     pump.render()
     
+
     
     # Cycle
     # (b)
@@ -256,6 +243,7 @@ if __name__ == '__main__':
         pump.open_L_valve()
         pump.render()
         print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
+
     output_P_min = pump.Rchamber.P
     print("output_P_min = ", output_P_min)  # 10635.948812228482
     '''
@@ -296,3 +284,4 @@ if __name__ == '__main__':
     print("output_P_max = ", output_P_max)  # 255661.6620987855
     '''
     
+
