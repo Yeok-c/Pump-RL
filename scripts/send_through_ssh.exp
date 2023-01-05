@@ -1,0 +1,4 @@
+#!/usr/bin/expect
+set timeout 20
+
+expect "*password:" {send -- "2123\r"}
