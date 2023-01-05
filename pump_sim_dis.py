@@ -21,15 +21,36 @@ class chamber:
         self.P_prev = P0  # Pressure of chamber in previous step
         self.V_prev = self.V   # Volume of chamber in previous step
         return
+        
     def calculate_V(self, L=None):
         if L is None:
             L = self.L
         # Calculate the volume of chamber (V) by the length (L)
         compensate = -2.5E-06
+        a = self.a*100
+        c = self.c*100
+        L = L*100
+
         h = L / self.n / 2
-        V = 2 * self.a * self.a * h + math.sqrt(2) * self.a * self.c * h
-        V = V + (math.sqrt(2) * self.a + 2.0/3 * self.c) * math.sqrt(self.c*self.c - 2*h*h) * h
-        return self.n * V + compensate
+        V_seg = 2 * a * a * h + math.sqrt(2) * a * c * h
+        # V_seg = 2 * self.a * self.a * h + math.sqrt(2) * self.a * self.c * h
+        V_seg = V_seg + (math.sqrt(2) * a + 2.0/3 * c) * math.sqrt(c*c - 2*h*h) * h
+        # V = self.n * V_seg + compensate
+        V = self.n * V_seg 
+        V = V/1000000 + compensate
+        return V
+    # def calculate_V(self, L=None):
+    #     if L is None:
+    #         L = self.L
+    #     # Calculate the volume of chamber (V) by the length (L)
+    #     compensate = -2.5E-06
+    #     h = L / self.n / 2
+    #     V = 2 * self.a * self.a * h + math.sqrt(2) * self.a * self.c * h
+    #     V = V + (math.sqrt(2) * self.a + 2.0/3 * self.c) * math.sqrt(self.c*self.c - 2*h*h) * h
+    #     # V = V + (math.sqrt(2) * self.a + 2.0/3 * self.c) * math.sqrt((self.c+math.sqrt(2)*h)*(self.c-math.sqrt(2)*h)) * h
+    #     V = V/1000000
+    #     return self.n * V + compensate
+
     def calculate_P(self):
         # Calculate the pressure of chamber (P) by the volume (V)
         return self.P_prev * self.V_prev / self.V
@@ -147,7 +168,6 @@ if __name__ == '__main__':
     pump.open_L_valve()
     pump.close_L_valve()
     print('start:', 'self.pump.Lchamber.P:', pump.Lchamber.P, 'self.pump.Rchamber.P:', pump.Rchamber.P)
-
     # step 
     actions = np.array([[-0.11293268, -1.        ], [-0.73517716, -0.40774852], [ 1.        , -0.11729856], [ 0.3907593, -1.        ], [-0.68165046,  0.1595722 ], [0.4569448 , 0.09706157 ], [-0.87153196, -0.5983197 ]])
     for action in actions:
@@ -195,18 +215,15 @@ if __name__ == '__main__':
     print(pump.P_M)
     print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
     pump.render()
-
     pump.move_motor_to_R(0.06)
     print('?',pump.P_M)
     print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
     pump.render()
-
     pump.move_motor_to_R(0.05)
     print(pump.P_M)
     print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
     pump.render()
     
-
     
     # Cycle
     # (b)
@@ -239,7 +256,6 @@ if __name__ == '__main__':
         pump.open_L_valve()
         pump.render()
         print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
-
     output_P_min = pump.Rchamber.P
     print("output_P_min = ", output_P_min)  # 10635.948812228482
     '''
@@ -280,4 +296,3 @@ if __name__ == '__main__':
     print("output_P_max = ", output_P_max)  # 255661.6620987855
     '''
     
-

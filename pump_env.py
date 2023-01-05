@@ -2,8 +2,8 @@ import gym
 from gym import spaces
 import numpy as np
 import random
-# from pump_sim_dis import hybrid_pump
-from pump_sim_load import hybrid_pump
+from pump_sim_dis import hybrid_pump
+# from pump_sim_load import hybrid_pump
 
 
 P_0 = 1.01*1e5  # Pa
@@ -106,6 +106,7 @@ class PumpEnv(gym.Env):
         goal_pressure_max = 10 * P_0
         val_L_min = 0.0
         val_L_max = 2.0
+        float_offset = 0.001
         # observation_range_low = np.array([goal_pressure_min, 0.0, 0.05*P_0, 0.05*P_0, 6.031857e-05, 6.031857e-05, -0.05])
         # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.000185983, 0.000313, +0.05])
         # observation_range_low = np.array([goal_pressure_min, 0.0, 0.05*P_0, 0.05*P_0, 6.031857e-05, 6.031857e-05, -0.05])
@@ -114,7 +115,15 @@ class PumpEnv(gym.Env):
         # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05])
         observation_range_low = np.array([goal_pressure_min, 0.0, 0.01*P_0, 0.01*P_0, 0.049, 0.049, -0.05, 0.0, 0.0, 0.0, val_L_min])
         observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05, 1.0, 1.0, 1.0, val_L_max])
+        # observation_range_low = np.array([goal_pressure_min, 0.0, 0.01*P_0, 0.01*P_0, 0.049, 0.049, -0.05, 0.0, 0.0, 0.0])
+        # observation_range_high = np.array([goal_pressure_max, 1.0, 10*P_0, 10*P_0, 0.151, 0.151, +0.05, 1.0, 1.0, 1.0])
+        
+        observation_range_low = observation_range_low - float_offset
+        observation_range_high = observation_range_high + float_offset
+        
         norm_h, norm_l = 1.0, -1.0
+
+        
         norm_observation = (observation - observation_range_low) / (observation_range_high - observation_range_low) * (norm_h - norm_l) + norm_l
         if ((norm_l <= norm_observation) & (norm_observation <= norm_h)).all():
             pass
@@ -164,25 +173,32 @@ class PumpEnv(gym.Env):
         self.pump.render(time)
 
 
+    def print_info(self):
+        print("Total Gas: {:.06f} | Gasses {:.06f}, {:.06f} | Total Volume {:.06f} | Pressures {:.06f}, {:.06f} | Volumes  {:.06f}, {:.06f}".format(
+        self.pump.Lchamber.V*self.pump.Lchamber.P + self.pump.Rchamber.V*self.pump.Rchamber.P,
+        self.pump.Lchamber.V*self.pump.Lchamber.P, self.pump.Rchamber.V*self.pump.Rchamber.P,
+        self.pump.Lchamber.V+self.pump.Rchamber.V, 
+        self.pump.Lchamber.P, self.pump.Rchamber.P,
+        self.pump.Lchamber.V, self.pump.Rchamber.V))
+
 if "__main__" == __name__:
     CM_2_M = 0.01
     env = PumpEnv()
     env.reset()
-    
-    action=[-1.0, -0.3]
-    env.step(action)
-    env.render(0)
+    env.print_info()
+    # env.render()
 
-    action=[+0.7, 0.2]
-    env.step(action)
-    env.render(0)
+    for i in range(10):
+        action=[random.uniform(-1,1), 0.3]
+        env.step(action)
+        env.print_info()
+        env.render()
+        
+        # action=[1.0, 0.3]
+        # env.step(action)
+        # env.print_info()
+        # # env.render()
 
-    action=[-0.6, 0.8]
+    action=[0, 0.3]
     env.step(action)
-    env.render(0)
-
-    # for i in range(100):
-    #     action = env.action_space.sample()
-    #     env.step(action)
-    #     print('action:', action)
-    #     env.render(0)
+    env.print_info()
