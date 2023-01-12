@@ -28,7 +28,8 @@ class curi_communication_udp:
         buf = ""
         if readable:
             for a in readable:
-                buf = str(a.recvfrom(256)[0][0:]) #.decode("utf-8")
+                buf = a.recvfrom(256)[0].decode("utf-8")
+                # print("Received:", buf)
                 # buf = str(a.recvfrom(256)[0])
         return buf
 

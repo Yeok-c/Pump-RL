@@ -109,12 +109,12 @@ class real_pump:
         # real pump init
         self.udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
         self.udp.open()
-        self.set_valves([1,1,1,1,1])
-        # self.set_position(0)
-        self.set_valves([0,0,0,0,0])
-        self.get_position()
-        self.get_pressure()
-        self.get_valves()
+        # self.set_valves([1,1,1,1,1])
+        # # self.set_position(0)
+        # self.set_valves([0,0,0,0,0])
+        # self.get_position()
+        # self.get_pressure()
+        # self.get_valves()
 
         # Estimate init chamber volume
         self.testchamber = chamber(0.1, P_0)
@@ -163,39 +163,58 @@ class real_pump:
 
 
     def get_pressure(self):
-        self.udp.send("getPressure")
+        msg = "getPr"
+        self.udp.send(msg)
+        print("Sent: ", msg)
+
+        # Sample received string: recPr:0.000000,0.000000,0.000000,0.000000"
         rc = self.udp.recieve()
-        if rc != "":
-            print('recieve:', rc)
+        rc = rc.split(':')
+
+        if rc[0] == "recPr":
+            rc = rc[1]
             P1 = float(rc.split(',')[0])
             P2 = float(rc.split(',')[1])
             P3 = float(rc.split(',')[2])
             P4 = float(rc.split(',')[3])
             self.pressure = [P1, P2, P3, P4]
+            print('Received pressures:', self.pressure)
         return self.pressure
 
     def get_position(self):
-        self.udp.send("getPosition")
+        msg = "getPo"
+        self.udp.send(msg)
+        print("Sent: ", msg)        
+
+        # Sample received string: recPo:0.000020 
         rc = self.udp.recieve()
-        if rc != "":
-            print('position:', rc)
+        rc = rc.split(':')
+        
+        if rc[0] == "recPo":
+            rc = rc[1]
+            print('Received piston position:', rc)
             self.P_M = float(rc)
+
         return self.P_M
 
     def set_position(self, position):
-        self.udp.send("     ,"+str(position))
-        print("sent: ", position)
+        msg = "setPo:"+str(position)
+        self.udp.send(msg)
+        print("Sent: ", msg)
         # Wait for moving done
         moving_done = False
         while moving_done == False:
             rc = self.udp.recieve()
-            if rc == "moving done":
+            if rc == "moving done": ## !!!!!!!!!!!
                 moving_done = True
         self.get_position()
         return moving_done
 
     def get_valves(self):
-        self.udp.send("getValve")
+        msg = "getVa"
+        self.udp.send(msg)
+        print("Sent: ", msg)
+
         rc = self.udp.recieve()
         try:
             rc = rc.split('\'')[1]
@@ -212,7 +231,10 @@ class real_pump:
         return self.valve
 
     def set_valves(self, valve):
-        self.udp.send("setValve,"+str(valve[0])+","+str(valve[1])+","+str(valve[2])+","+str(valve[3])+","+str(valve[4]))
+        msg = "setVa,"+str(valve[0])+","+str(valve[1])+","+str(valve[2])+","+str(valve[3])+","+str(valve[4])
+        self.udp.send(msg)
+        print("Sent: ", msg)
+
         # Wait for moving done
         IO_done = False
         while IO_done == False:
@@ -343,6 +365,11 @@ class real_pump:
 if __name__ == '__main__':
     # Test code for udp
     pump = real_pump()
+    while(1):
+        pump.get_pressure()
+        time.sleep(1)
+        pump.get_position()
+        time.sleep(1)
     # pump.get_valves()
     # print(pump.valve)
     # pump.open_L_valve()
@@ -365,12 +392,12 @@ if __name__ == '__main__':
     # print(pump.valve)
     # pump.close_R_load_valve()
     # print(pump.valve)
-    pump.get_position()
-    print(pump.P_M)
-    pump.move_motor_to_L(0.014)
-    pump.get_position()
-    print(pump.P_M)
-    pump.move_motor_to_R(0.014)
-    pump.get_position()
-    print(pump.P_M)
+    # pump.get_position()
+    # print(pump.P_M)
+    # pump.move_motor_to_L(0.014)
+    # pump.get_position()
+    # print(pump.P_M)
+    # pump.move_motor_to_R(0.014)
+    # pump.get_position()
+    # print(pump.P_M)
 
