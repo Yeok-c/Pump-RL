@@ -110,7 +110,7 @@ class real_pump:
         self.udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
         self.udp.open()
         self.set_valves([1,1,1,1,1])
-        self.set_position(0)
+        # self.set_position(0)
         self.set_valves([0,0,0,0,0])
         self.get_position()
         self.get_pressure()
@@ -167,11 +167,11 @@ class real_pump:
         rc = self.udp.recieve()
         if rc != "":
             print('recieve:', rc)
-        P1 = float(rc.split(',')[0])
-        P2 = float(rc.split(',')[1])
-        P3 = float(rc.split(',')[2])
-        P4 = float(rc.split(',')[3])
-        self.pressure = [P1, P2, P3, P4]
+            P1 = float(rc.split(',')[0])
+            P2 = float(rc.split(',')[1])
+            P3 = float(rc.split(',')[2])
+            P4 = float(rc.split(',')[3])
+            self.pressure = [P1, P2, P3, P4]
         return self.pressure
 
     def get_position(self):
@@ -179,11 +179,12 @@ class real_pump:
         rc = self.udp.recieve()
         if rc != "":
             print('position:', rc)
-        self.P_M = float(rc)
+            self.P_M = float(rc)
         return self.P_M
 
     def set_position(self, position):
-        self.udp.send("setPosition,"+str(position))
+        self.udp.send("     ,"+str(position))
+        print("sent: ", position)
         # Wait for moving done
         moving_done = False
         while moving_done == False:
@@ -196,13 +197,18 @@ class real_pump:
     def get_valves(self):
         self.udp.send("getValve")
         rc = self.udp.recieve()
-        if rc != "":
+        try:
+            rc = rc.split('\'')[1]
+        except:
+            pass
+        if rc != "" and rc != "moving done":
             print('recieve:', rc)
-        self.valve[0] = int(rc.split(',')[0])
-        self.valve[1] = int(rc.split(',')[1])
-        self.valve[2] = int(rc.split(',')[2])
-        self.valve[3] = int(rc.split(',')[3])
-        self.valve[4] = int(rc.split(',')[4])
+
+            self.valve[0] = int(rc.split(',')[0])
+            self.valve[1] = int(rc.split(',')[1])
+            self.valve[2] = int(rc.split(',')[2])
+            self.valve[3] = int(rc.split(',')[3])
+            self.valve[4] = int(rc.split(',')[4])
         return self.valve
 
     def set_valves(self, valve):
@@ -259,7 +265,7 @@ class real_pump:
     def close_inner_valve(self):
         self.get_valves()
         self.valve[2] = 0
-        self.set_valve_state(self.valve)
+        self.set_valves(self.valve)
         return
 
     def open_L_load_valve(self):
@@ -267,14 +273,14 @@ class real_pump:
         self.valve[3] = 1
         # self.Lchamber.load_valve = 1
         # self.Lchamber.equalize_pressures_with_load()
-        self.set_valve_state(self.valve)
+        self.set_valves(self.valve)
         return
 
     def close_L_load_valve(self):
         self.get_valves()
         self.valve[3] = 0
         # self.Lchamber.load_valve = 0
-        self.set_valve_state(self.valve)
+        self.set_valves(self.valve)
         return
     
     def open_R_load_valve(self):
@@ -282,14 +288,14 @@ class real_pump:
         self.valve[4] = 1        
         # self.Rchamber.load_valve = 1
         # self.Rchamber.equalize_pressures_with_load()
-        self.set_valve_state(self.valve)
+        self.set_valves(self.valve)
         return
 
     def close_R_load_valve(self):
         self.get_valves()
         # self.Rchamber.load_valve = 0
         self.valve[4] = 0
-        self.set_valve_state(self.valve)
+        self.set_valves(self.valve)
         return
 
     def move_motor_to_L(self, dL):
@@ -322,12 +328,14 @@ class real_pump:
             # self.Lchamber.change_length(dL) 
             # self.Rchamber.change_length(-dL)
             self.P_M = self.P_M_R_Limitation
+            print("setting position to: ", self.P_M)
             self.set_position(self.P_M)
         else:
             # Move to the right
             self.P_M = self.P_M + dL
             # self.Lchamber.change_length(dL)
             # self.Rchamber.change_length(-dL)
+            print("setting position to: ", self.P_M)
             self.set_position(self.P_M)
         return
 
@@ -335,34 +343,34 @@ class real_pump:
 if __name__ == '__main__':
     # Test code for udp
     pump = real_pump()
-    pump.get_valves()
-    print(pump.valve)
-    pump.open_L_valve()
-    print(pump.valve)
-    pump.close_L_valve()
-    print(pump.valve)
-    pump.open_R_valve()
-    print(pump.valve)
-    pump.close_R_valve()
-    print(pump.valve)
-    pump.open_inner_valve()
-    print(pump.valve)
-    pump.close_inner_valve()
-    print(pump.valve)
-    pump.open_L_load_valve()
-    print(pump.valve)
-    pump.close_L_load_valve()
-    print(pump.valve)
-    pump.open_R_load_valve()
-    print(pump.valve)
-    pump.close_R_load_valve()
-    print(pump.valve)
+    # pump.get_valves()
+    # print(pump.valve)
+    # pump.open_L_valve()
+    # print(pump.valve)
+    # pump.close_L_valve()
+    # print(pump.valve)
+    # pump.open_R_valve()
+    # print(pump.valve)
+    # pump.close_R_valve()
+    # print(pump.valve)
+    # pump.open_inner_valve()
+    # print(pump.valve)
+    # pump.close_inner_valve()
+    # print(pump.valve)
+    # pump.open_L_load_valve()
+    # print(pump.valve)
+    # pump.close_L_load_valve()
+    # print(pump.valve)
+    # pump.open_R_load_valve()
+    # print(pump.valve)
+    # pump.close_R_load_valve()
+    # print(pump.valve)
     pump.get_position()
     print(pump.P_M)
-    pump.move_motor_to_L(0.3)
+    pump.move_motor_to_L(0.014)
     pump.get_position()
     print(pump.P_M)
-    pump.move_motor_to_R(0.6)
+    pump.move_motor_to_R(0.014)
     pump.get_position()
     print(pump.P_M)
 
