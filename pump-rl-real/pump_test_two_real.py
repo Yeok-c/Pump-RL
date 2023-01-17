@@ -1,6 +1,7 @@
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3 import PPO, DDPG, TD3, SAC
 from pump_realenv_variable_load_two_DRA import PumpRealEnvVar_Two
+from curi_communication_udp import curi_communication_udp
 import pickle
 import os
 import cv2
@@ -9,8 +10,14 @@ import numpy as np
 P_0 = 1.01*1e5  # Pa
 
 test_loads=[
-    0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8
+    # 0, 0.5, 
+    1, 2, 
+    # 3, 4, 5, 6, 7, 8
 ]
+
+udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
+udp.open()
+print("Open udp")
 
 MEAN_REWARD=[]
 STD_REWARD=[]
@@ -26,10 +33,11 @@ for load in test_loads:
         use_step_loss = False,   
         # obs_noise = 0.01,
         # K_deform = 0.01,
+        udp=udp
         )
     load = str(load).replace('.', '_')
 
-    env.reset()
+    # env.reset()
 
     GL=env.goal_pressure_sequence_L
     GR=env.goal_pressure_sequence_R

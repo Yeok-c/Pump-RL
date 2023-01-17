@@ -128,7 +128,7 @@ class PumpEnvVar_Two(PumpEnv):
 
         # [Action 0]: P_M
         prev_P_M = self.pump.P_M
-        goal_P_M = action[0] * 0.013
+        goal_P_M = action[0] * 0.05
         move_distance = goal_P_M - prev_P_M
         if move_distance >= 0:
             self.pump.move_motor_to_R(move_distance)
@@ -155,17 +155,18 @@ class PumpEnvVar_Two(PumpEnv):
         if pump_action == 0:
             pass
         if pump_action == 1:
-            self.pump.open_L_valve()
+            self.pump.open_L_load_valve()
         if pump_action == 2:
-            self.pump.open_inner_valve()
+            self.pump.open_L_valve()
         if pump_action == 3:
             self.pump.open_R_valve()
         if pump_action == 4:
-            self.pump.open_L_load_valve()
-        if pump_action == 5:
             self.pump.open_R_load_valve()
+        if pump_action == 5:
+            self.pump.open_inner_valve()
         
         self.tim("Open valve")
+
 
         # if action[1] > 0:
         #     self.pump.open_L_valve()
@@ -181,8 +182,8 @@ class PumpEnvVar_Two(PumpEnv):
         # Loss functions
         # self.loss_L = abs(self.pump.Lchamber.load_P - self.goal_pressure_L)/P_0 
         # self.loss_R = abs(self.pump.Rchamber.load_P - self.goal_pressure_R)/P_0
-        # loss_L = abs(self.pump.Lchamber.P - self.goal_pressure_L)/self.goal_pressure_L 
-        # loss_R = abs(self.pump.Rchamber.P - self.goal_pressure_R)/self.goal_pressure_R
+        # combined_loss = self.loss_L + self.loss_R
+
         self.loss_L = np.power((self.pump.Lchamber.load_P - self.goal_pressure_L)/P_0, 2) 
         self.loss_R = np.power((self.pump.Rchamber.load_P - self.goal_pressure_R)/P_0, 2)
         combined_loss = np.sqrt(self.loss_L + self.loss_R)
@@ -197,8 +198,10 @@ class PumpEnvVar_Two(PumpEnv):
         #     self.reward = 0.0
         
         if self.action_counter >= self.max_episodes:
-            # If all subgoals are done then episode is complete
             self.done = True
+        # elif combined_loss <= 0.005:
+        #     # If all subgoals are done then episode is complete
+        #     self.done = True
         else:
             # Otherwise move on to next subgoal
             self.goal_pressure_L = self.goal_pressure_sequence_L[self.action_counter]
@@ -446,17 +449,19 @@ class PumpEnvVar_Two(PumpEnv):
 
             ])
 
+        # lL cL cR lR I  notation
         action_sequence = np.array([
         # Calibrate left load first. PC1 is P_0 as initialized
-        [ 1, 0, 0, 0, 1, 0, 0, ], # (a) Max right (optional), open left valve to intake air 
-        [-1, 1, 0, 0, 0, 0, 0, ], # (b) Max left. (set PC1 to current reading)
-        [-1, 0, 0, 0, 0, 1, 0, ], # (c) Max left, open left load valve (equalize load and chamber pressures)
-        # Now the left load and left chamber pressure hav equaliezd to P2 
-
-        [-1, 0, 1, 0, 0, 0, 0, ], # (a) Max left (optional), open right valve to intake air 
-        [ 1, 1, 0, 0, 0, 0, 0, ], # (b) Max right. (set PC1 to current reading)
-        [ 1, 0, 0, 0, 0, 0, 1, ], # (c) Max right, open right load valve (equalize load and chamber pressures)
-        # Now the right load and right chamber pressure have equaliezd to P2 
+        [ 1, 0, 0, 1, 0, 0, 0,], # (a) Max right (optional), open left valve to intake air 
+        [-1, 1, 0, 0, 0, 0, 0,], # (b) Max left. (set PC1 to current reading)
+        [-1, 0, 1, 0, 0, 0, 0,], # (c) Max left, open left load valve (equalize load and chamber pressures)
+        # Now the left load and left chamber pressure have equalized to P2 
+        
+        [-1, 0, 0, 0, 1, 0, 0,], # (a) Max left (optional), open right valve to intake air 
+        [ 1, 1, 0, 0, 0, 0, 0,], # (b) Max right. (set PC1 to current reading)
+        [ 1, 0, 0, 0, 0, 1, 0,], # (c) Max right, open right load valve (equalize load and chamber pressures)
+        # Now the right load and right chamber pressure have equalized to P2 
+        
         ])
 
         # 0,1 self.goal_pressure_L, float(self.goal_pressure_L < P_0),
@@ -627,25 +632,25 @@ if "__main__" == __name__:
     import matplotlib.pyplot as plt
     
     A_=[]
-    while 1:
-    # for i in range(5):
-        env = PumpEnvVar_Two(
-            # load_range=[0.1, 0.1], 
-            load_range=[0, 2], 
-            goal_pressure_R_range=[0.6, 1.6],
-            goal_pressure_L_range=[0.6, 1.6],
-            max_episodes=100,
-            use_combined_loss = True,
-            use_step_loss = False,   
-            # obs_noise = 0.01,
-            # K_deform = 0.01,
-            )
-        env.reset()
-        fig, ax = plt.subplots(1,1)
-        ax.plot((env.goal_pressure_sequence_L-P_0)/1000)
-        ax.plot((env.goal_pressure_sequence_R-P_0)/1000)
-        plt.show()
-        # env.render(time=1000, title="Reset", render_chamber_pressures=True)
+    # while 1:
+    # # for i in range(5):
+    env = PumpEnvVar_Two(
+        # load_range=[0.1, 0.1], 
+        load_range=[0, 2], 
+        goal_pressure_R_range=[0.6, 1.6],
+        goal_pressure_L_range=[0.6, 1.6],
+        max_episodes=100,
+        use_combined_loss = True,
+        use_step_loss = False,   
+        # obs_noise = 0.01,
+        # K_deform = 0.01,
+        )
+    #     env.reset()
+    #     fig, ax = plt.subplots(1,1)
+    #     ax.plot((env.goal_pressure_sequence_L-P_0)/1000)
+    #     ax.plot((env.goal_pressure_sequence_R-P_0)/1000)
+    #     plt.show()
+    #     # env.render(time=1000, title="Reset", render_chamber_pressures=True)
     
     while 1:
         # for i in range(env.max_episodes):

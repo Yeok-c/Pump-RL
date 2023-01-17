@@ -99,8 +99,8 @@ class chamber:
 class hybrid_pump:
     def __init__(self, L_L, L_R, load_chamber_ratio_L, load_chamber_ratio_R, K_deform):
         self.P_M = 0  # motor
-        self.P_M_L_Limitation = -0.05
-        self.P_M_R_Limitation = +0.05
+        self.P_M_L_Limitation = -0.015
+        self.P_M_R_Limitation = +0.015
         
         self.testchamber = chamber(L_L, P_0)
         V_0 = self.testchamber.V 
@@ -172,47 +172,47 @@ class hybrid_pump:
         return P_new, P_new
 
     def open_L_valve(self):
-        self.valve[0] = 1
+        self.valve[1] = 1
         self.Lchamber.P = P_0
         return
     def close_L_valve(self):
-        self.valve[0] = 0
-        return
-
-    def open_R_valve(self):
-        self.valve[1] = 1
-        self.Rchamber.P = P_0
-        return
-    def close_R_valve(self):
         self.valve[1] = 0
         return
 
-    def open_inner_valve(self):
+    def open_R_valve(self):
         self.valve[2] = 1
-        self.Lchamber.P, self.Rchamber.P = self.equalize_pressures(self.Lchamber, self.Rchamber)
+        self.Rchamber.P = P_0
         return
-    def close_inner_valve(self):
+    def close_R_valve(self):
         self.valve[2] = 0
         return
 
+    def open_inner_valve(self):
+        self.valve[4] = 1
+        self.Lchamber.P, self.Rchamber.P = self.equalize_pressures(self.Lchamber, self.Rchamber)
+        return
+    def close_inner_valve(self):
+        self.valve[4] = 0
+        return
+
     def open_L_load_valve(self):
-        self.valve[3] = 1
+        self.valve[0] = 1
         self.Lchamber.load_valve = 1
         self.Lchamber.equalize_pressures_with_load()
         return
     def close_L_load_valve(self):
-        self.valve[3] = 0
+        self.valve[0] = 0
         self.Lchamber.load_valve = 0
         return
     
     def open_R_load_valve(self):
-        self.valve[4] = 1        
+        self.valve[3] = 1        
         self.Rchamber.load_valve = 1
         self.Rchamber.equalize_pressures_with_load()
         return
     def close_R_load_valve(self):
         self.Rchamber.load_valve = 0
-        self.valve[4] = 0
+        self.valve[3] = 0
         return
 
     def move_motor_to_L(self, dL):
@@ -264,11 +264,11 @@ if __name__ == '__main__':
     print(pump.Rchamber_V_max, pump.Rchamber_V_min)
     pump.render(title='step 1', time=1)
 
-    pump.move_motor_to_R(0.025)
+    pump.move_motor_to_R(0.015)
     print('start:', 'self.pump.Lchamber.P:', pump.Lchamber.P, 'self.pump.Rchamber.P:', pump.Rchamber.P)
     pump.render(time=1000)
 
-    pump.move_motor_to_L(0.025)
+    pump.move_motor_to_L(0.015)
     print('start:', 'self.pump.Lchamber.P:', pump.Lchamber.P, 'self.pump.Rchamber.P:', pump.Rchamber.P)
     pump.render(time=1000)
 

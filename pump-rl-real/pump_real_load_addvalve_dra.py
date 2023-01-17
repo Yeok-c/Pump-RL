@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 from curi_communication_udp import curi_communication_udp
+from resources.graphics import Graphics
 import time
 
 
@@ -98,21 +99,21 @@ class chamber:
 # IO0  VL, PL   IO2  VR, PR   IO1
 
 class real_pump:
-    def __init__(self):
+    def __init__(self, udp):
         # real
         self.P_M = 0  # motor
         self.P_M_L_Limitation = -0.015
         self.P_M_R_Limitation = +0.015
         self.valve = [0,0,0,0,0]  # 0: close, 1: open  [L, R, inner, load L, load R]
         self.pressure = [0,0,0,0]  # [Lc, Rc, load L, load R]
-
+        self.udp = udp
         # real pump init
-        try:
-            self.udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
-            self.udp.open()
-            # self.udp
-        except:
-            print("udp already opened")
+        # try:
+        #     self.udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
+        #     self.udp.open()
+        #     # self.udp
+        # except:
+        #     print("udp already opened")
 
             # return
         # self.set_valves([1,1,1,1,1])
@@ -148,34 +149,43 @@ class real_pump:
         # self.Rchamber_V_min = self.Rchamber.calculate_V(L_R - abs(self.P_M_R_Limitation))
         
         
-    def render(self, time=0, title='', filename=None):
-        MM_2_PX = 1000
-        self.img = np.zeros((200,400,3),dtype='uint8')
-        cv2.rectangle(self.img,(100,100),(100+int(0.2*MM_2_PX),100-10),(0,255,0),3)  # pump
-        cv2.circle(self.img,(int(200+self.P_M*MM_2_PX),100-5),8,(255,0,0),-1)  # motor
         
-        if self.valve[0] == 0:
-            cv2.circle(self.img,(90,100-5),3,(0,0,255),-1)  # IO0
-        if self.valve[1] == 0:
-            cv2.circle(self.img,(310,100-5),3,(0,0,255),-1)   # IO1
-        if self.valve[2] == 0:
-            cv2.circle(self.img,(200,100+10),3,(0,0,255),-1)  # IO2
-        if self.valve[3] == 0:
-            cv2.circle(self.img,(130,80),3,(0,0,255),-1)  # IO3
-        if self.valve[4] == 0:
-            cv2.circle(self.img,(270,80),3,(0,0,255),-1)  # IO4
+    def render(self, time=0, title='', filename=None):
+        self.graphics = Graphics() 
+        self.graphics.render_valve_and_motor(self.valve, self.P_M)
 
-        cv2.putText(self.img,'Chamber_L P: {p:.2f}'.format(p=self.Lchamber.P/P_0),(30,150), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.putText(self.img,'Chamber_R P: {p:.2f}'.format(p=self.Rchamber.P/P_0),(230,150), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.putText(self.img,'Load_L P: P: {p:.2f}'.format(p=self.Lchamber.load_P/P_0),(60,40), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.putText(self.img,'Load_R P: {p:.2f}'.format(p=self.Rchamber.load_P/P_0),(230,40), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.putText(self.img, title,(50,180), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.imshow('a',self.img)
+        # self.graphics.add_text_to_image('     \nLeft chamber', (220,120))
+        # self.graphics.add_text_to_image(' \nRight chamber', (510,120))
+
+        # self.Lchamber.P =   self.pressure[0]
+        # self.Rchamber.P =   self.pressure[1]
+        # self.Lchamber.load_P =   self.pressure[2]
+        # self.Rchamber.load_P =   self.pressure[3]
+        
+        self.graphics.add_text_to_image('   Left chamber \npressure: {: 06.2F} kPa'.format(
+            (self.pressure[0]-P_0)/1000), (220,120))
+        
+        self.graphics.add_text_to_image('   Right chamber \npressure: {: 06.2F} kPa'.format(
+            (self.pressure[1]-P_0)/1000), (510,120))
+
+        self.graphics.add_text_to_image('     Left load \npressure: {: 06.2F} kPa'.format(
+            (self.pressure[2]-P_0)/1000), (15,300))
+        
+        self.graphics.add_text_to_image('     Right load \npressure: {: 06.2F} kPa'.format(
+            (self.pressure[3]-P_0)/1000), (665,300))
+
+        self.graphics.add_text_to_image(title, (100,100), font_scale=0.7)
+       
         if filename==None:
             pass
         else:
-            cv2.imwrite(filename, self.img)
-        cv2.waitKey(time)
+            cv2.imwrite(filename, self.graphics.display_image)
+
+        if time != 0:
+            cv2.imshow('a',self.graphics.display_image)
+            cv2.waitKey(time)
+
+        return self.graphics.display_image
 
     def tim(last_time, task_name):
         current_time = time.time()
@@ -424,7 +434,7 @@ class real_pump:
             # self.Rchamber.change_length(-dL)
             self.P_M = self.P_M_R_Limitation
             print("Setting position to: ", self.P_M)
-            self.set_position(self.P_M)
+            self.set_position(float(self.P_M))
         else:
             # Move to the right
             self.P_M = self.P_M + dL

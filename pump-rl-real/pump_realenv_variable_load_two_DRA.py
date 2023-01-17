@@ -5,6 +5,7 @@ import random
 # from pump_sim_dis import hybrid_pump
 # from pump_sim_load import hybrid_pump
 # from pump_sim_load_addvalve_dra import hybrid_pump
+from curi_communication_udp import curi_communication_udp
 from pump_real_load_addvalve_dra import real_pump
 from pump_env import PumpEnv
 # import matplotlib.pyplot as plt
@@ -20,6 +21,7 @@ LOAD_V_RANGE = np.array([0, 0.1])
 
 class PumpRealEnvVar_Two(PumpEnv):
     def __init__(self, 
+    udp,
     load_range=[0.0,2.0], 
     goal_pressure_L_range=[0.7, 0.9],
     goal_pressure_R_range=[1.1, 2.0],
@@ -112,6 +114,9 @@ class PumpRealEnvVar_Two(PumpEnv):
         self.goal_pressure_L = self.goal_pressure_sequence_L[self.action_counter]
         self.goal_pressure_R = self.goal_pressure_sequence_R[self.action_counter]
         self.prev_observation = np.zeros((dim_obs,))
+
+        self.udp = udp
+
         self.reset()
 
 
@@ -378,11 +383,11 @@ class PumpRealEnvVar_Two(PumpEnv):
         #     load_chamber_ratio_R=self.load_R,
         #     K_deform=self.K_deform
         #     )  # train with random load
-        try:
-            self.pump.udp.close()
-        except:
-            print("udp already closed")
-        self.pump = real_pump()  # real pump
+        # try:
+        #     self.pump.udp.close()
+        # except:
+        #     print("udp already closed")
+        self.pump = real_pump(udp=self.udp)  # real pump
         self.tim("create env")
 
 
@@ -407,7 +412,7 @@ class PumpRealEnvVar_Two(PumpEnv):
 
         # Calibrate
         self.tim("Step observation finished")
-        V_L, V_R = self.calibrate()
+        V_L, V_R = self.calibrate(render=True)
         self.tim("Calibrate")
 
         # Reset pump to original state
@@ -445,7 +450,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         #     load_chamber_ratio_L=self.load_L, 
         #     load_chamber_ratio_R=self.load_R,
         #     )  # train with random load
-        self.pump = real_pump()  # real pump
+        self.pump = real_pump(self.udp)  # real pump
         self.goal_pressure_L = goal_pressure_L
         self.goal_pressure_R = goal_pressure_R
         
@@ -454,7 +459,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         # observation = np.concatenate((self.step_observation, self.step_observation))
         return observation
 
-    def calibrate(self, render=0):
+    def calibrate(self, render=False):
         action_names = np.array([
             # Calibrate left load first. PC1 is P_0 as initialized
             "(a) Max right, open left valve to intake air ",
@@ -552,7 +557,9 @@ class PumpRealEnvVar_Two(PumpEnv):
         if render == 1:
             # print("Calculated load volumes vs real: {:.07f}, {:.07f} | {:.07f}, {:.07f} ".format(
             #     V_L, V_R, self.pump.Lchamber.load_V, self.pump.Rchamber.load_V ))
-            print("TODO")  # TODO: print real volumes
+            print("Calculated load volumes vs real: {:.07f}, {:.07f} | UNKNOWN UNKNOWN TODO ".format(
+                V_L, V_R)) # self.pump.Lchamber.load_V, self.pump.Rchamber.load_V ))
+            # print("TODO")  # TODO: print real volumes
         return V_L, V_R
         
     def print_step_info(self):
@@ -671,25 +678,28 @@ if "__main__" == __name__:
     #         observation, reward, done, info = env.step(action)
     #         env.render(0, title=str(action))
 
-    A_=[]
-    # while 1:
-    for i in range(5):
-        print("\n\n\n\n Creating env")
-        env = PumpRealEnvVar_Two(
-            K_deform=0.05,
-            obs_noise=0.05
-        )
-        print("\n\n\n\n Resetting env")        
-        env.reset()
-        # env.render(time=1, title='Reset')
+    udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
+    udp.open()
+    print("Open udp")
 
-        print("\n\n\n\n Starting actions")        
-        for i in range(env.max_episodes):
-            print("\n\n\n\nCurrent step: ", i)
-            action = env.action_space.sample()
-            obs, _, _, _ = env.step(action)
-            env.print_step_info()
-            # env.render(time=1)
+
+    print("\n\n\n\n Creating env")
+    env = PumpRealEnvVar_Two(
+        udp = udp,
+        K_deform=0.05,
+        obs_noise=0.05
+    )
+    # print("\n\n\n\n Resetting env")        
+    # env.reset()
+    # env.render(time=1, title='Reset')
+
+    print("\n\n\n\n Starting actions")        
+    for i in range(env.max_episodes):
+        print("\n\n\n\nCurrent step: ", i)
+        action = env.action_space.sample()
+        obs, _, _, _ = env.step(action)
+        env.print_step_info()
+        env.render(time=1)
 
     # env.set_load_and_goal_pressure(0.01, 1.1*P_0)
     # for i in range(5):

@@ -9,7 +9,9 @@ import numpy as np
 P_0 = 1.01*1e5  # Pa
 
 test_loads=[
-    0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8
+    # 0, 0.5, 
+    1, 2, 
+    # 3, 4, 5, 6, 7, 8
 ]
 
 MEAN_REWARD=[]
@@ -42,11 +44,11 @@ for load in test_loads:
     # model_step = "11000000"       
 
     model_dir = "models"
-    model_run = "1672390571"
-    model_step = "20000000"    
+    model_run = "1673864379"
+    model_step = "3000000"    
 
     model_path = f"{model_dir}/{model_run}/{model_step}"  # for var load experiment
-    # model = SAC.load(model_path, env=env, print_system_info=True)
+    model = SAC.load(model_path, env=env, print_system_info=True)
 
 
     policy_kwargs = dict(

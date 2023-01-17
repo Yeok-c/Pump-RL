@@ -29,16 +29,17 @@ class Graphics():
     def render_valve_and_motor(self, valve_states, MOTOR_POS):
         display_image = self.background_image
         # cL cR I lL lR
-        if valve_states[0] == 1: #cL
+        # lL cL cR lR I
+        if valve_states[1] == 1: #cL
             display_image = self._overlay_images(display_image, self.pump_valve_image_cL, 0,0)
 
-        if valve_states[1] == 1: # cR
+        if valve_states[2] == 1: # cR
             display_image = self._overlay_images(display_image, self.pump_valve_image_cR, 0,0)
 
-        if valve_states[3] == 1: # lL
+        if valve_states[0] == 1: # lL
             display_image = self._overlay_images(display_image, self.pump_valve_image_lL, 0,0)
 
-        if valve_states[4] == 1: #lR
+        if valve_states[3] == 1: #lR
             display_image = self._overlay_images(display_image, self.pump_valve_image_lR, 0,0)
 
         # Map motor position -> piston pixel position
@@ -51,9 +52,9 @@ class Graphics():
         MOTOR_PIXEL_X = int(X1 + (MOTOR_POS-x1)*(X2-X1)/(x2-x1))
              
         # Overlay
-        if valve_states[2] == 1:
+        if valve_states[4] == 1:
             piston_image = self.pump_valve_image_i_open
-        elif valve_states[2] == 0:
+        elif valve_states[4] == 0:
             piston_image = self.pump_valve_image_i_closed
         
         display_image = self._overlay_images(display_image, piston_image, MOTOR_PIXEL_X,Y)
