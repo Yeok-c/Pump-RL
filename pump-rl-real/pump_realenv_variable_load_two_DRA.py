@@ -30,7 +30,8 @@ class PumpRealEnvVar_Two(PumpEnv):
     use_step_loss = True,
     obs_noise = 0.00,
     K_deform = 0.00,
-    ):
+    ):    
+        print("================== Redeclaring PumpRealEnvVar_Two! ======================")
 
         # super(PumpEnv, self).__init__()
         self.observation_name = [
@@ -137,7 +138,11 @@ class PumpRealEnvVar_Two(PumpEnv):
         
         # [Action 0]: P_M
         prev_P_M = self.pump.P_M
-        goal_P_M = action[0] * 0.013 ## lim to 0.013 for now
+        if np.random.random_sample()>0.5:   
+            goal_P_M = 0.013 ## lim to 0.013 for now
+        else:
+            goal_P_M = -0.013
+        # goal_P_M = action[0] * 0.013 ## lim to 0.013 for now
         move_distance = goal_P_M - prev_P_M
         if move_distance >= 0:
             self.pump.move_motor_to_R(move_distance)
@@ -366,6 +371,8 @@ class PumpRealEnvVar_Two(PumpEnv):
 
 
     def reset(self):
+        print("\n\n+++++++++++++++++ RESETTING ENV +++++++++++++++++++++++")
+
         ## Initialization
         self.done = False
         self.reward = 0

@@ -255,8 +255,12 @@ class real_pump:
             rc = rc.split(':')
             if rc!='' and rc[0] == "movPo":
                 moving_done = True
+                print("Moving done!")
+            elif rc!='' and rc[0] == "falPo":
+                print("Moving failed! Reset...")
+                time.sleep(10)
+                moving_done = self.set_position(position)
         self.get_position()
-        # print("Moving done!")
         return moving_done
 
     def get_valves(self):
