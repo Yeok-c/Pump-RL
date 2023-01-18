@@ -485,14 +485,24 @@ class PumpEnvVar_Two(PumpEnv):
             if i == 2:
                 assert self.pump.Lchamber.load_P == self.pump.Lchamber.P
                 P_2 = self.pump.Lchamber.P # which should also be observation[5]
-                V_L = (P_2-P_C1)/(P_L1-P_2) * self.pump.Lchamber.V
+                if P_L1-P_2 == 0: # If no change
+                    V_L = 8
+                    print("No change in pressure, set V_L to 8 (large load)")
+                else: # Default
+                    V_L = (P_2-P_C1)/(P_L1-P_2) * self.pump.Lchamber.V
             if i == 4: # reading taking frames
                 P_L1 = self.pump.Rchamber.load_P
                 P_C1 = self.pump.Rchamber.P
             if i == 5:
                 assert self.pump.Rchamber.load_P==self.pump.Rchamber.P
                 P_2 = self.pump.Rchamber.P
-                V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber.V
+                
+                if P_L1-P_2 == 0: # If no change
+                    V_R = 8
+                    print("No change in pressure, set V_R to 8 (large load)")
+                else: # Default
+                    V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber.V
+                    
 
         if render == 1:
             print("Calculated load volumes vs real: {:.07f}, {:.07f} | {:.07f}, {:.07f} ".format(

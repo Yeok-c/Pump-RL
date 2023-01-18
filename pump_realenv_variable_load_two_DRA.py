@@ -54,7 +54,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         self.observation_range_low = np.array([
             goal_pressure_min, goal_pressure_min, 
             goal_pressure_min, goal_pressure_min, 
-            goal_pressure_min, goal_pressure_min, 
+            # goal_pressure_min, goal_pressure_min, 
             0.01*P_0, 0.01*P_0, 
             0.01*P_0, 0.01*P_0, 
             0.049, 0.049, -0.05, 
@@ -66,7 +66,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         self.observation_range_high= np.array([
             goal_pressure_max, goal_pressure_max,
             goal_pressure_max, goal_pressure_max,
-            goal_pressure_max, goal_pressure_max,
+            # goal_pressure_max, goal_pressure_max,
             10*P_0, 10*P_0, 
             10*P_0, 10*P_0, 
             0.151, 0.151, +0.05, 
@@ -82,7 +82,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         self.action_space = spaces.Box(low=-1, high=1,
                                             shape=(7,), dtype=np.float32)
         # Input observation:
-        self.future_frames = 3
+        self.future_frames = 2
         dim_obs = 14+self.future_frames*2
         n_stack_obs = 1
         dim_stack_obs = int(dim_obs * n_stack_obs)
@@ -546,7 +546,13 @@ class PumpRealEnvVar_Two(PumpEnv):
                 # V_L = (P_2-P_C1)/(P_L1-P_2) * self.pump.Lchamber.V
                 # self.pump.get_pressure()  # real pump
                 P_2 = self.pump.pressure[0] # which should also be observation[5]
-                V_L = (P_2-P_C1)/(P_L1-P_2) * self.pump.Lchamber.V # TODO: Lchamber_V
+
+                if P_L1-P_2 == 0: # If no change
+                    V_L = 8
+                    print("No change in pressure, set V_L to 8 (large load)")
+                else: # Default
+                    V_L = (P_2-P_C1)/(P_L1-P_2) * self.pump.Lchamber.V
+
             if i == 4: # reading taking frames
                 # P_L1 = self.pump.Rchamber.load_P
                 # P_C1 = self.pump.Rchamber.P
@@ -559,7 +565,13 @@ class PumpRealEnvVar_Two(PumpEnv):
                 # V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber_V
                 # self.pump.get_pressure()  # real pump
                 P_2 = self.pump.pressure[1]  #self.Rchamber.P
-                V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber.V  # TODO: Rchamber_V
+
+                if P_L1-P_2 == 0: # If no change
+                    V_R = 8
+                    print("No change in pressure, set V_R to 8 (large load)")
+                else: # Default
+                    V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber.V
+
 
         if render == 1:
             # print("Calculated load volumes vs real: {:.07f}, {:.07f} | {:.07f}, {:.07f} ".format(
