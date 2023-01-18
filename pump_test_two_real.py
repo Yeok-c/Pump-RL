@@ -73,14 +73,14 @@ for load in test_loads:
     #     # action_noise=NormalActionNoise(0, 0.02),
     # )
 
-
+    # Do not evaluate agent for real pump - no time for this.
     # Evaluate the agent
-    print("Evaluating the agent with 100 episodes. Please wait")
-    mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=100)
-    MEAN_REWARD.append(mean_reward)
-    STD_REWARD.append(std_reward)
-    reward = 0
-    print(f"mean_reward:{mean_reward:.2f} +/- {std_reward}\n")
+    # print("Evaluating the agent with 100 episodes. Please wait")
+    # mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=100)
+    # MEAN_REWARD.append(mean_reward)
+    # STD_REWARD.append(std_reward)
+    # reward = 0
+    # print(f"mean_reward:{mean_reward:.2f} +/- {std_reward}\n")
 
     # Enjoy trained agent
     # episodes = 10
