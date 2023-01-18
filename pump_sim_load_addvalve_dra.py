@@ -4,7 +4,7 @@ import math
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
-
+from resources.graphics import Graphics
 
 P_0 = 1.01*1e5  # Pa
 
@@ -117,80 +117,101 @@ class hybrid_pump:
         self.Rchamber_V_min = self.Rchamber.calculate_V(L_R - abs(self.P_M_R_Limitation))
         
     def render(self, time=0, title='', filename=None):
-        MM_2_PX = 1000
-        self.img = np.zeros((200,400,3),dtype='uint8')
-        cv2.rectangle(self.img,(100,100),(100+int(0.2*MM_2_PX),100-10),(0,255,0),3)  # pump
-        cv2.circle(self.img,(int(200+self.P_M*MM_2_PX),100-5),8,(255,0,0),-1)  # motor
+        # MM_2_PX = 1000
+        # self.img = np.zeros((200,400,3),dtype='uint8')
+        # cv2.rectangle(self.img,(100,100),(100+int(0.2*MM_2_PX),100-10),(0,255,0),3)  # pump
+        # cv2.circle(self.img,(int(200+self.P_M*MM_2_PX),100-5),8,(255,0,0),-1)  # motor
         
-        if self.valve[0] == 0:
-            cv2.circle(self.img,(90,100-5),3,(0,0,255),-1)  # IO0
-        if self.valve[1] == 0:
-            cv2.circle(self.img,(310,100-5),3,(0,0,255),-1)   # IO1
-        if self.valve[2] == 0:
-            cv2.circle(self.img,(200,100+10),3,(0,0,255),-1)  # IO2
-        if self.valve[3] == 0:
-            cv2.circle(self.img,(130,80),3,(0,0,255),-1)  # IO3
-        if self.valve[4] == 0:
-            cv2.circle(self.img,(270,80),3,(0,0,255),-1)  # IO4
+        # if self.valve[0] == 0:
+        #     cv2.circle(self.img,(90,100-5),3,(0,0,255),-1)  # IO0
+        # if self.valve[1] == 0:
+        #     cv2.circle(self.img,(310,100-5),3,(0,0,255),-1)   # IO1
+        # if self.valve[2] == 0:
+        #     cv2.circle(self.img,(200,100+10),3,(0,0,255),-1)  # IO2
+        # if self.valve[3] == 0:
+        #     cv2.circle(self.img,(130,80),3,(0,0,255),-1)  # IO3
+        # if self.valve[4] == 0:
+        #     cv2.circle(self.img,(270,80),3,(0,0,255),-1)  # IO4
 
-        cv2.putText(self.img,'Chamber_L P: {p:.2f}'.format(p=self.Lchamber.P/P_0),(30,150), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.putText(self.img,'Chamber_R P: {p:.2f}'.format(p=self.Rchamber.P/P_0),(230,150), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.putText(self.img,'Load_L P: P: {p:.2f}'.format(p=self.Lchamber.load_P/P_0),(60,40), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.putText(self.img,'Load_R P: {p:.2f}'.format(p=self.Rchamber.load_P/P_0),(230,40), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.putText(self.img, title,(50,180), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
-        cv2.imshow('a',self.img)
+        # cv2.putText(self.img,'Chamber_L P: {p:.2f}'.format(p=self.Lchamber.P/P_0),(30,150), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
+        # cv2.putText(self.img,'Chamber_R P: {p:.2f}'.format(p=self.Rchamber.P/P_0),(230,150), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
+        # cv2.putText(self.img,'Load_L P: P: {p:.2f}'.format(p=self.Lchamber.load_P/P_0),(60,40), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
+        # cv2.putText(self.img,'Load_R P: {p:.2f}'.format(p=self.Rchamber.load_P/P_0),(230,40), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
+        # cv2.putText(self.img, title,(50,180), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(255,255,255),1,cv2.LINE_AA)
+        # cv2.imshow('a',self.img)
+
+        self.graphics = Graphics() 
+        self.graphics.render_valve_and_motor(self.valve, self.P_M)
+
+        # self.graphics.add_text_to_image('     \nLeft chamber', (220,120))
+        # self.graphics.add_text_to_image(' \nRight chamber', (510,120))
+
+        self.graphics.add_text_to_image('   Left chamber \npressure: {: 06.2F} kPa'.format((self.Lchamber.P-P_0)/1000), (220,120))
+        self.graphics.add_text_to_image('   Right chamber \npressure: {: 06.2F} kPa'.format((self.Rchamber.P-P_0)/1000), (510,120))
+
+
+        self.graphics.add_text_to_image('     Left load \npressure: {: 06.2F} kPa'.format((self.Lchamber.load_P-P_0)/1000), (15,300))
+        self.graphics.add_text_to_image('     Right load \npressure: {: 06.2F} kPa'.format((self.Rchamber.load_P-P_0)/1000), (665,300))
+
+        self.graphics.add_text_to_image(title, (100,100), font_scale=0.7)
+       
         if filename==None:
             pass
         else:
-            cv2.imwrite(filename, self.img)
-        cv2.waitKey(time)
+            cv2.imwrite(filename, self.graphics.display_image)
+
+        if time != 0:
+            cv2.imshow('a',self.graphics.display_image)
+            cv2.waitKey(time)
+
+        return self.graphics.display_image
 
     def equalize_pressures(self, chamber1, chamber2):
         P_new = (chamber1.P * chamber1.V + chamber2.P * chamber2.V) / (chamber1.V + chamber2.V)
         return P_new, P_new
 
     def open_L_valve(self):
-        self.valve[0] = 1
+        self.valve[1] = 1
         self.Lchamber.P = P_0
         return
     def close_L_valve(self):
-        self.valve[0] = 0
-        return
-
-    def open_R_valve(self):
-        self.valve[1] = 1
-        self.Rchamber.P = P_0
-        return
-    def close_R_valve(self):
         self.valve[1] = 0
         return
 
-    def open_inner_valve(self):
+    def open_R_valve(self):
         self.valve[2] = 1
-        self.Lchamber.P, self.Rchamber.P = self.equalize_pressures(self.Lchamber, self.Rchamber)
+        self.Rchamber.P = P_0
         return
-    def close_inner_valve(self):
+    def close_R_valve(self):
         self.valve[2] = 0
         return
 
+    def open_inner_valve(self):
+        self.valve[4] = 1
+        self.Lchamber.P, self.Rchamber.P = self.equalize_pressures(self.Lchamber, self.Rchamber)
+        return
+    def close_inner_valve(self):
+        self.valve[4] = 0
+        return
+
     def open_L_load_valve(self):
-        self.valve[3] = 1
+        self.valve[0] = 1
         self.Lchamber.load_valve = 1
         self.Lchamber.equalize_pressures_with_load()
         return
     def close_L_load_valve(self):
-        self.valve[3] = 0
+        self.valve[0] = 0
         self.Lchamber.load_valve = 0
         return
     
     def open_R_load_valve(self):
-        self.valve[4] = 1        
+        self.valve[3] = 1        
         self.Rchamber.load_valve = 1
         self.Rchamber.equalize_pressures_with_load()
         return
     def close_R_load_valve(self):
         self.Rchamber.load_valve = 0
-        self.valve[4] = 0
+        self.valve[3] = 0
         return
 
     def move_motor_to_L(self, dL):
@@ -235,15 +256,20 @@ if __name__ == '__main__':
         L_L=0.1, L_R=0.1, 
         load_chamber_ratio_L=1.5, 
         load_chamber_ratio_R=0.8,
+        K_deform=0
     )
-    # print('Pressure_L',pump.Lchamber.P/P_0)
-    # print('Pressure_R',pump.Rchamber.P/P_0, 3/2)
-    
-    # print(pump.Lchamber_V_max, pump.Lchamber_V_min)
-    # print(pump.Rchamber_V_max, pump.Rchamber_V_min)
-    # pump.render()
-    # pump.move_motor_to_R(0.05)
-    # print(pump.Rchamber.P / P_0)
+
+    print(pump.Lchamber_V_max, pump.Lchamber_V_min)
+    print(pump.Rchamber_V_max, pump.Rchamber_V_min)
+    pump.render(title='step 1', time=1)
+    pump.move_motor_to_R(0.05)
+    print(pump.Rchamber.P / P_0)
+    pump.render(time=1)
+    pump.move_motor_to_L(0.2)
+    pump.render(time=1)
+    pump.move_motor_to_R(0.1)
+    pump.render(time=1)
+
     '''
     pump = hybrid_pump(0.1, 0.1)
     pump.move_motor_to_L(0.05)

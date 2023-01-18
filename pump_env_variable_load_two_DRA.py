@@ -33,7 +33,7 @@ class PumpEnvVar_Two(PumpEnv):
         # super(PumpEnv, self).__init__()
         self.observation_name = [
         "Goal_L[t]", "Goal_L[t+1]", 
-        "Goal_L[t+2]", "Goal_R[t]", "Goal_R[t+1]", "Goal_R[t+2]",
+        # "Goal_L[t+2]", "Goal_R[t]", "Goal_R[t+1]", "Goal_R[t+2]",
         "self.pump.Lchamber.load_P", "self.pump.Rchamber.load_P", "self.pump.Lchamber.P", "self.pump.Rchamber.P", 
         # self.pump.Lchamber.V, self.pump.Rchamber.V,  # V is not available in the real pump
         "CHAMBER_LEN + self.pump.P_M", "CHAMBER_LEN - self.pump.P_M", "self.pump.P_M",
@@ -51,7 +51,7 @@ class PumpEnvVar_Two(PumpEnv):
         self.observation_range_low = np.array([
             goal_pressure_min, goal_pressure_min, 
             goal_pressure_min, goal_pressure_min, 
-            goal_pressure_min, goal_pressure_min, 
+            # goal_pressure_min, goal_pressure_min, 
             0.01*P_0, 0.01*P_0, 
             0.01*P_0, 0.01*P_0, 
             0.049, 0.049, -0.05, 
@@ -63,7 +63,7 @@ class PumpEnvVar_Two(PumpEnv):
         self.observation_range_high= np.array([
             goal_pressure_max, goal_pressure_max,
             goal_pressure_max, goal_pressure_max,
-            goal_pressure_max, goal_pressure_max,
+            # goal_pressure_max, goal_pressure_max,
             10*P_0, 10*P_0, 
             10*P_0, 10*P_0, 
             0.151, 0.151, +0.05, 
@@ -79,7 +79,7 @@ class PumpEnvVar_Two(PumpEnv):
         self.action_space = spaces.Box(low=-1, high=1,
                                             shape=(7,), dtype=np.float32)
         # Input observation:
-        self.future_frames = 3
+        self.future_frames = 2
         dim_obs = 14+self.future_frames*2
         n_stack_obs = 1
         dim_stack_obs = int(dim_obs * n_stack_obs)
@@ -128,7 +128,7 @@ class PumpEnvVar_Two(PumpEnv):
 
         # [Action 0]: P_M
         prev_P_M = self.pump.P_M
-        goal_P_M = action[0] * 0.05
+        goal_P_M = action[0] * 0.015
         move_distance = goal_P_M - prev_P_M
         if move_distance >= 0:
             self.pump.move_motor_to_R(move_distance)
@@ -155,15 +155,15 @@ class PumpEnvVar_Two(PumpEnv):
         if pump_action == 0:
             pass
         if pump_action == 1:
-            self.pump.open_R_valve()
-        if pump_action == 2:
-            self.pump.open_inner_valve()
-        if pump_action == 3:
-            self.pump.open_L_valve()
-        if pump_action == 4:
             self.pump.open_L_load_valve()
-        if pump_action == 5:
+        if pump_action == 2:
+            self.pump.open_L_valve()
+        if pump_action == 3:
+            self.pump.open_R_valve()
+        if pump_action == 4:
             self.pump.open_R_load_valve()
+        if pump_action == 5:
+            self.pump.open_inner_valve()
         
         self.tim("Open valve")
 
@@ -446,20 +446,23 @@ class PumpEnvVar_Two(PumpEnv):
 
             ])
 
+        # lL cL cR lR I  notation
         action_sequence = np.array([
         # Calibrate left load first. PC1 is P_0 as initialized
-        [ 1, 0, 0, 0, 1, 0, 0, ], # (a) Max right (optional), open left valve to intake air 
-        [-1, 1, 0, 0, 0, 0, 0, ], # (b) Max left. (set PC1 to current reading)
-        [-1, 0, 0, 0, 0, 1, 0, ], # (c) Max left, open left load valve (equalize load and chamber pressures)
-        # Now the left load and left chamber pressure hav equaliezd to P2 
-
-        [-1, 0, 1, 0, 0, 0, 0, ], # (a) Max left (optional), open right valve to intake air 
-        [ 1, 1, 0, 0, 0, 0, 0, ], # (b) Max right. (set PC1 to current reading)
-        [ 1, 0, 0, 0, 0, 0, 1, ], # (c) Max right, open right load valve (equalize load and chamber pressures)
-        # Now the right load and right chamber pressure have equaliezd to P2 
+        [ 1, 0, 0, 1, 0, 0, 0,], # (a) Max right (optional), open left valve to intake air 
+        [-1, 1, 0, 0, 0, 0, 0,], # (b) Max left. (set PC1 to current reading)
+        [-1, 0, 1, 0, 0, 0, 0,], # (c) Max left, open left load valve (equalize load and chamber pressures)
+        # Now the left load and left chamber pressure have equalized to P2 
+        
+        [-1, 0, 0, 0, 1, 0, 0,], # (a) Max left (optional), open right valve to intake air 
+        [ 1, 1, 0, 0, 0, 0, 0,], # (b) Max right. (set PC1 to current reading)
+        [ 1, 0, 0, 0, 0, 1, 0,], # (c) Max right, open right load valve (equalize load and chamber pressures)
+        # Now the right load and right chamber pressure have equalized to P2 
+        
         ])
 
-        # 0,1 self.goal_pressure_L, float(self.goal_pressure_L < P_0),
+
+	# 0,1 self.goal_pressure_L, float(self.goal_pressure_L < P_0),
         # 2,3 self.goal_pressure_R, float(self.goal_pressure_R < P_0),
         # 4,5 self.pump.Lchamber.load_P, self.pump.Rchamber.load_P, 
         # 6,7 self.pump.Lchamber.P, self.pump.Rchamber.P, 
@@ -509,7 +512,7 @@ class PumpEnvVar_Two(PumpEnv):
 
     def render(self, time=0, title='', filename=None):
         # Render the environment to the screen
-        self.pump.render(time, title, filename)
+        return self.pump.render(time, title, filename)
 
     def tim(self, task_name):
         current_time = time.time()
@@ -573,34 +576,56 @@ if "__main__" == __name__:
     #     [-1, 0, 1, 0], # (c) Max left position, open bottom valve
     #     [-1, 0, 0, 1], # (d) Max left position, open right valve
     #     ])
-    
+
+        
+
     # Sequence 3: Positive and negative pressure with 3 chambers
-    # action_names = ([
-    #     "",
-    #     "",
-    #     "",
-    #     "",
-    #     "",
-    #     "",
-    # ])
+    action_names = ([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+    ])
     
-    # action_sequence = np.array([
-    #     [ 1, 0, 0, 0, 1, 0], # (a) Max right position, close right valve
-    #     [ 1, 0, 0, 1, 0, 0], # (a) Max right position, open right valve
-    #     [ 1, 0, 0, 0, 0, 0], # (b) Max right position, close all valve
-    #     [-1, 0, 1, 0, 0, 0], # (c) Max left position, open bottom valve
-    #     [-1, 0, 0, 1, 0, 0], # (d) Max left position, open right valve
-    #     [-1, 0, 0, 0, 1, 0], # "(d) Max left position, open load valve",
-    #     ])
+    # right, inner, left, left load, right load
 
-    # while 1:
-    #     env.reset()
-    #     # for i in range(env.max_episodes):
-    #     for name, action in zip(action_names, action_sequence):
-    #         # action = env.action_space.sample()
-    #         observation, reward, done, info = env.step(action)
-    #         env.render(0, title=str(action))
+        # if pump_action == 0:
+        #     self.pump.open_R_valve()
+        # if pump_action == 1:
+        #     self.pump.open_inner_valve()
+        # if pump_action == 2:
+        #     self.pump.open_L_valve()
+        # if pump_action == 3:
+        #     self.pump.open_L_load_valve()
+        # if pump_action == 4:
+        #     self.pump.open_R_load_valve()
 
+
+    action_sequence = np.array([
+        # [ 1, 0, 0, 0, 1, 0], # (a) Max right position, close right valve
+        # [ 1, 0, 0, 1, 0, 0], # (a) Max right position, open right valve
+        # [ 1, 0, 0, 0, 0, 0], # (b) Max right position, close all valve
+        # [-1, 0, 1, 0, 0, 0], # (c) Max left position, open bottom valve
+        # [-1, 0, 0, 1, 0, 0], # (d) Max left position, open right valve
+        # [-1, 0, 0, 0, 1, 0], # "(d) Max left position, open load valve",
+        # p, 0, R, I, L, lL, lR
+        # [ 1, 0, 0, 0, 1, 0, 0], # 
+        # [-1, 0, 1, 0, 0, 0, 0], # 
+        # [ 1, 0, 0, 1, 0, 0, 0], # 
+        # [-1, 0, 0, 0, 0, 1, 0], #  
+        # [-1, 0, 0, 0, 1, 0, 0], #  
+        # [ 1, 0, 1, 0, 0, 0, 0], #  
+        # [ 1, 0, 0, 1, 0, 0, 0], #  
+
+        [ 1, 0, 1, 0, 0, 0, 0], # (a) Max right position, open right valve
+        [ 1, 0, 0, 0, 0, 0, 0], # (b) Max right position, close all valve
+        [-1, 0, 0, 1, 0, 0, 0], # (c) Max left position, open bottom valve
+        [-1, 0, 1, 0, 0, 0, 0], # (d) Max left position, open right valve
+        ])
+
+    
     A_=[]
     # while 1:
     for i in range(5):
@@ -608,29 +633,37 @@ if "__main__" == __name__:
             K_deform=0.05,
             obs_noise=0.05
         )
-        
-    #     obs = env.reset()
-        
-    #     A = env.generate_composite_moving_goal_pressure(amp_range=[0,1], n=5)
-    #     A_.append(A)
-        
-    # for A in A_:
-    #     plt.plot(A/P_0)
-    # plt.show()
+         
+    while 1:
         env.reset()
-        # env.render(0, title='Reset')
+        # for i in range(env.max_episodes):
+        for name, action in zip(action_names, action_sequence):
+            # action = env.action_space.sample()
+            observation, reward, done, info = env.step(action)
+            env.render(0, title=str(action))
 
-        for i in range(env.max_episodes):
-            action = env.action_space.sample()
-            obs, _, _, _ = env.step(action)
-            # print('obs:', obs[-1], env.var_L)
-            env.print_step_info()
-            # env.render(0)
+    # #     obs = env.reset()
+        
+    # #     A = env.generate_composite_moving_goal_pressure(amp_range=[0,1], n=5)
+    # #     A_.append(A)
+        
+    # # for A in A_:
+    # #     plt.plot(A/P_0)
+    # # plt.show()
+    #     env.reset()
+    #     # env.render(0, title='Reset')
 
-    # env.set_load_and_goal_pressure(0.01, 1.1*P_0)
-    # for i in range(5):
-    #     action = env.action_space.sample()
-    #     obs, _, _, _ = env.step(action)
-    #     # print('obs:', obs[-1], env.var_L)
-    #     env.print_step_info() 
-    #     env.render(0)
+    #     for i in range(env.max_episodes):
+    #         action = env.action_space.sample()
+    #         obs, _, _, _ = env.step(action)
+    #         # print('obs:', obs[-1], env.var_L)
+    #         env.print_step_info()
+    #         # env.render(0)
+
+    # # env.set_load_and_goal_pressure(0.01, 1.1*P_0)
+    # # for i in range(5):
+    # #     action = env.action_space.sample()
+    # #     obs, _, _, _ = env.step(action)
+    # #     # print('obs:', obs[-1], env.var_L)
+    # #     env.print_step_info() 
+    # #     env.render(0)

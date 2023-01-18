@@ -14,12 +14,12 @@ from summary_writer import SummaryWriterCallback
 def get_args(argv):
     noise = 0.02
     dra_schedule = 0 # 0 constant
-    goal_range_low = 0.3
-    goal_range_high = 2.0 #[2.0, 4.0]
+    goal_range_low = 0.5
+    goal_range_high = 1.7  #[2.0, 4.0]
     load_vol_range_low = 0
     load_vol_range_high = 2.0
-    gamma = 0.92
-    timesteps = 20*1000000
+    gamma = 0.99
+    timesteps = 50*1000000
 
     opts, args = getopt.getopt(argv,"hi:o:",[
     "noise=","dra_schedule=", 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     # Create dirs
     models_dir = f"models/{int(time.time())}"
-    logs_dir = f"../logs/{int(time.time())}"
+    logs_dir = f"./logs/{int(time.time())}"
     # logname="SACSHORT"
     logname = "SAC Noise{}_Schedule{}_Goalrange{}-{}_Loadrange{}-{}_Gamma{}_Steps{}M".format(
         noise, dra_schedule, goal_pressure_L, goal_pressure_H, load_range_L, load_range_H,
@@ -90,35 +90,30 @@ if __name__ == "__main__":
 
 
     # Load the trained agent
-    # model_dir = "models"
-    # model_run = "1671515701"
-    # model_step = "9500000"     
-    # env = make_vec_env(lambda: env, n_envs=10)  # Multi-process (This behaves like batchsize)    
-    # model_filepath = f"remote_models/1671515701/9500000"  # for var load experiment
-    # model = SAC.load(
-    #     model_filepath, env=env, print_system_info=True, tensorboard_log=logs_dir,
-    #     # buffer_size=1000000, 
-    #     gamma=0.95,
-    #     batch_size=2048,
-    #     ) 
+    model_dir = "models"
+    model_run = "1673923036"
+    model_step = "4000000"
+    #env = make_vec_env(lambda: env, n_envs=10)  # Multi-process (This behaves like batchsize)    
+    model_filepath = f"./{model_dir}/{model_run}/{model_step}"
+    model = SAC.load(model_filepath, env=env, print_system_info=True, tensorboard_log=logs_dir, gamma=gamma, batch_size=512)
 
-    policy_kwargs = dict(
-        # activation_fn=th.nn.ReLU,
-        net_arch=[64, 64]
-        )
+#    policy_kwargs = dict(
+#        # activation_fn=th.nn.ReLU,
+#        net_arch=[64, 64]
+#        )
 
     # Model
-    model = SAC(
-        # TD3Policy_embedding,
-        "MlpPolicy",
-        env, verbose=1, 
-        tensorboard_log=logs_dir, 
-        gamma=0.92,
-        batch_size=512,
-        # learning_rate=linear_schedule(0.001),
-        policy_kwargs=policy_kwargs,
-        # action_noise=NormalActionNoise(0, 0.02),
-    )
+#    model = SAC(
+#        # TD3Policy_embedding,
+#        "MlpPolicy",
+#        env, verbose=1, 
+#        tensorboard_log=logs_dir, 
+#        gamma=0.99,
+#        batch_size=512,
+#        # learning_rate=linear_schedule(0.001),
+#        policy_kwargs=policy_kwargs,
+#        # action_noise=NormalActionNoise(0, 0.02),
+#    )
 
     print("Actor: ", model.actor.latent_pi)
     SCHED_TIMESTEPS = 100000
@@ -135,13 +130,13 @@ if __name__ == "__main__":
                 training_noise = progress*noise
             elif dra_schedule == 0: # no schedule, constant
                 training_noise = noise
-            
+
             # Scheduled goal_pressure_H 
             # goal_pressure_H_=goal_pressure_H[0]+(goal_pressure_H[1]-goal_pressure_H[0])*progress
             # goal_pressure_H_ = 3.0 # goal_pressure_H[0]
             # print("Current progress:{}, noise: {}".format(progress, noise))
             # print("Current progress:{}, goal_pressure_H_: {}".format(progress, goal_pressure_H_))
-            
+
             env = PumpEnvVar_Two(
                 load_range=[load_range_L, load_range_H], 
                 goal_pressure_R_range=[goal_pressure_L, goal_pressure_H],

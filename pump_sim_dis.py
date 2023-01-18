@@ -168,6 +168,7 @@ if __name__ == '__main__':
     pump.open_L_valve()
     pump.close_L_valve()
     print('start:', 'self.pump.Lchamber.P:', pump.Lchamber.P, 'self.pump.Rchamber.P:', pump.Rchamber.P)
+
     # step 
     actions = np.array([[-0.11293268, -1.        ], [-0.73517716, -0.40774852], [ 1.        , -0.11729856], [ 0.3907593, -1.        ], [-0.68165046,  0.1595722 ], [0.4569448 , 0.09706157 ], [-0.87153196, -0.5983197 ]])
     for action in actions:
@@ -215,15 +216,18 @@ if __name__ == '__main__':
     print(pump.P_M)
     print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
     pump.render()
+
     pump.move_motor_to_R(0.06)
     print('?',pump.P_M)
     print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
     pump.render()
+
     pump.move_motor_to_R(0.05)
     print(pump.P_M)
     print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
     pump.render()
     
+
     
     # Cycle
     # (b)
@@ -256,6 +260,7 @@ if __name__ == '__main__':
         pump.open_L_valve()
         pump.render()
         print(pump.Lchamber.V, pump.Rchamber.V, pump.Lchamber.P, pump.Rchamber.P)
+
     output_P_min = pump.Rchamber.P
     print("output_P_min = ", output_P_min)  # 10635.948812228482
     '''
@@ -296,3 +301,4 @@ if __name__ == '__main__':
     print("output_P_max = ", output_P_max)  # 255661.6620987855
     '''
     
+
