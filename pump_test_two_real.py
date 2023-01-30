@@ -129,7 +129,7 @@ for load in test_loads:
         # P_R_G.append((env.goal_pressure_R-P_0)/1000)
         P_L.append((env.pump.Lchamber.load_P-P_0)/1000)
         # P_L_G.append((env.goal_pressure_L-P_0)/1000)
-        R.append(reward)
+        R.append(env.reward)
         
         # env.goal_pressure_sequence_L/1000
         # env.goal_pressure_sequence_R/1000
