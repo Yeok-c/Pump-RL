@@ -258,7 +258,7 @@ class real_pump:
                 print("Moving done!")
             elif rc!='' and rc[0] == "falPo":
                 print("Moving failed! Reset...")
-                time.sleep(10)
+                time.sleep(2)
                 moving_done = self.set_position(position)
         self.get_position()
         return moving_done
@@ -288,6 +288,7 @@ class real_pump:
             self.valve[2] = int(rc.split(',')[2])
             self.valve[3] = int(rc.split(',')[3])
             self.valve[4] = int(rc.split(',')[4])
+            # print('Split into states:', self.valve)
         return self.valve
 
     def set_valves(self, valve):
@@ -438,7 +439,7 @@ class real_pump:
             # self.Rchamber.change_length(-dL)
             self.P_M = self.P_M_R_Limitation
             print("Setting position to: ", self.P_M)
-            self.set_position(float(self.P_M))
+            self.set_position(self.P_M)
         else:
             # Move to the right
             self.P_M = self.P_M + dL

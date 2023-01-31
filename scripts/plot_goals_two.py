@@ -23,8 +23,8 @@ ax.plot(np.arange(1, P_L_G.size+1), P_L_G, '-b')
 ax.plot(np.arange(0, P_R.size), P_R, '--r')
 ax.plot(np.arange(1, P_R_G.size+1), P_R_G, '-r')
 
-ax.set_title("Target and actuated pressures relative to atmosphere, \nV_L={:.01f}, \
-    V_R={:.01f} (multiples of chamber volume)".format(VL, VR))
+ax.set_title("Target and actuated pressures relative to atmosphere, \nV_L={:.03f}, \
+    V_R={:.03f} (multiples of chamber volume)".format(VL, VR))
 ax.set_xlabel("Timesteps")
 ax.set_ylabel("kPa")
 

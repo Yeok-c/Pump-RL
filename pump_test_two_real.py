@@ -7,6 +7,8 @@ import os
 import cv2
 import numpy as np
 
+# os.chdir("Pump-RL-Real")
+
 P_0 = 1.01*1e5  # Pa
 
 test_loads=[
@@ -125,10 +127,13 @@ for load in test_loads:
             time=1
         )
 
-        P_R.append((env.pump.Rchamber.load_P-P_0)/1000)
-        # P_R_G.append((env.goal_pressure_R-P_0)/1000)
-        P_L.append((env.pump.Lchamber.load_P-P_0)/1000)
-        # P_L_G.append((env.goal_pressure_L-P_0)/1000)
+        # self.Lchamber.load_P =   self.pressure[2]
+        # self.Rchamber.load_P =   self.pressure[3]
+        
+        P_L.append((env.pump.pressure[2]-P_0)/1000)
+        P_R.append((env.pump.pressure[3]-P_0)/1000)
+        # P_R.append((env.pump.Rchamber.load_P-P_0)/1000)
+        # P_L.append((env.pump.Lchamber.load_P-P_0)/1000)
         R.append(env.reward)
         
         # env.goal_pressure_sequence_L/1000
@@ -146,7 +151,7 @@ for load in test_loads:
 
         # print("obs:", obs[-1])
         # print('env.load', env.load)
-        action, _states = model.predict(obs)
+        action, _states = model.predict(env.step_observation)
         obs, reward, done, info = env.step(action)
         # print("Rchamber.P: {p:.3f} | ".format(p=env.pump.Rchamber.P/P_0),
         #       "Goal {p1} pressure {p2:.3f} | ".format(p1=env.goal_sequence_number, p2=env.goal_pressure/P_0),

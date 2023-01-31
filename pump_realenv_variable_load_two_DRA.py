@@ -35,13 +35,14 @@ class PumpRealEnvVar_Two(PumpEnv):
 
         # super(PumpEnv, self).__init__()
         self.observation_name = [
-        "Goal_L[t]", "Goal_L[t+1]", 
-        "Goal_L[t+2]", "Goal_R[t]", "Goal_R[t+1]", "Goal_R[t+2]",
-        "self.pump.Lchamber.load_P", "self.pump.Rchamber.load_P", "self.pump.Lchamber.P", "self.pump.Rchamber.P", 
-        # self.pump.Lchamber.V, self.pump.Rchamber.V,  # V is not available in the real pump
-        "CHAMBER_LEN + self.pump.P_M", "CHAMBER_LEN - self.pump.P_M", "self.pump.P_M",
-        "self.pump.valve[0]", "self.pump.valve[1]", "self.pump.valve[2]", "self.pump.valve[3]", "self.pump.valve[4]", 
-        "self.pump.V_L", "self.pump.V_R"
+            "Goal_L[t]", "Goal_L[t+1]", 
+            "Goal_L[t+2]", "Goal_R[t]", 
+            # "Goal_R[t+1]", "Goal_R[t+2]",
+            "self.pump.Lchamber.load_P", "self.pump.Rchamber.load_P", "self.pump.Lchamber.P", "self.pump.Rchamber.P", 
+            # self.pump.Lchamber.V, self.pump.Rchamber.V,  # V is not available in the real pump
+            "CHAMBER_LEN + self.pump.P_M", "CHAMBER_LEN - self.pump.P_M", "self.pump.P_M",
+            "self.pump.valve[0]", "self.pump.valve[1]", "self.pump.valve[2]", "self.pump.valve[3]", "self.pump.valve[4]", 
+            "self.pump.V_L", "self.pump.V_R"
         ]
 
         # Normalize observation
@@ -138,11 +139,14 @@ class PumpRealEnvVar_Two(PumpEnv):
         
         # [Action 0]: P_M
         prev_P_M = self.pump.P_M
-        if np.random.random_sample()>0.5:   
-            goal_P_M = 0.013 ## lim to 0.013 for now
-        else:
-            goal_P_M = -0.013
-        # goal_P_M = action[0] * 0.013 ## lim to 0.013 for now
+
+        # Randomly set goal_P_M for testing
+        # if np.random.random_sample()>0.5:   
+        #     goal_P_M = 0.013 ## lim to 0.013 for now
+        # else:
+        #     goal_P_M = -0.013
+        
+        goal_P_M = action[0] * 0.006 # lim to 0.013 for now
         move_distance = goal_P_M - prev_P_M
         if move_distance >= 0:
             self.pump.move_motor_to_R(move_distance)
@@ -195,7 +199,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         # Loss functions
         # self.loss_L = np.power((self.pump.Lchamber.load_P - self.goal_pressure_L)/P_0, 2) 
         # self.loss_R = np.power((self.pump.Rchamber.load_P - self.goal_pressure_R)/P_0, 2)
-        # self.pump.get_pressure()  # real pump
+        # self.pump.get_pressure()  # real pump 
 
         # prev_observation = self.step_observation # no longer important
         self.step_observation = self.calculate_step_observations() 
@@ -251,7 +255,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         step_observation = np.array([
             self.pump.pressure[2], self.pump.pressure[3], self.pump.pressure[0], self.pump.pressure[1], 
             CHAMBER_LEN+self.pump.P_M, CHAMBER_LEN-self.pump.P_M, self.pump.P_M,
-            self.pump.valve[0], self.pump.valve[1], self.pump.valve[2], self.pump.valve[3], self.pump.valve[4],  # converge faster but not stable
+            self.pump.valve[0], self.pump.valve[1], self.pump.valve[2], self.pump.valve[3], self.pump.valve[4], 
             self.pump.V_L, self.pump.V_R  # load
             # self.load_L, self.load_R  # load
             ])  # real pump
@@ -481,25 +485,11 @@ class PumpRealEnvVar_Two(PumpEnv):
             # "(d) Take reading since now they're equalized to P2",
 
             ])
-
-        # # L R I lL lR notation
-        # action_sequence = np.array([
-        # # Calibrate left load first. PC1 is P_0 as initialized
-        # [ 1, 0, 0, 0, 1, 0, 0, ], # (a) Max right (optional), open left valve to intake air 
-        # [-1, 1, 0, 0, 0, 0, 0, ], # (b) Max left. (set PC1 to current reading)
-        # [-1, 0, 0, 0, 0, 1, 0, ], # (c) Max left, open left load valve (equalize load and chamber pressures)
-        # # Now the left load and left chamber pressure hav equaliezd to P2 
-
-        # [-1, 0, 1, 0, 0, 0, 0, ], # (a) Max left (optional), open right valve to intake air 
-        # [ 1, 1, 0, 0, 0, 0, 0, ], # (b) Max right. (set PC1 to current reading)
-        # [ 1, 0, 0, 0, 0, 0, 1, ], # (c) Max right, open right load valve (equalize load and chamber pressures)
-        # # Now the right load and right chamber pressure have equaliezd to P2 
-        # ])
-        
        
-        # lL cL cR lR I  notation
         action_sequence = np.array([
+
         # Calibrate left load first. PC1 is P_0 as initialized
+        #    N lL cL cR lR  I  notation
         [ 1, 0, 0, 1, 0, 0, 0,], # (a) Max right (optional), open left valve to intake air 
         [-1, 1, 0, 0, 0, 0, 0,], # (b) Max left. (set PC1 to current reading)
         [-1, 0, 1, 0, 0, 0, 0,], # (c) Max left, open left load valve (equalize load and chamber pressures)
@@ -530,7 +520,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         
         # for i in range(self.max_episodes):
         for i, (name, action) in enumerate(zip(action_names, action_sequence)):
-            print(name)
+            print(name, " action: ",action)
             _,_,_,_ = self.step(action)
             # if render==1:
                 # self.render(0, title=name)
@@ -548,8 +538,8 @@ class PumpRealEnvVar_Two(PumpEnv):
                 P_2 = self.pump.pressure[0] # which should also be observation[5]
 
                 if P_L1-P_2 == 0: # If no change
-                    V_L = 8
-                    print("No change in pressure, set V_L to 8 (large load)")
+                    V_L = LOAD_V_RANGE[1]
+                    print("No change in pressure, set V_L to max (large load)")
                 else: # Default
                     V_L = (P_2-P_C1)/(P_L1-P_2) * self.pump.Lchamber.V
 
@@ -567,12 +557,12 @@ class PumpRealEnvVar_Two(PumpEnv):
                 P_2 = self.pump.pressure[1]  #self.Rchamber.P
 
                 if P_L1-P_2 == 0: # If no change
-                    V_R = 8
-                    print("No change in pressure, set V_R to 8 (large load)")
+                    V_R = LOAD_V_RANGE[1]
+                    print("No change in pressure, set V_R to max (large load)")
                 else: # Default
                     V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber.V
 
-
+        print("Calibration complete, V_L: {:.07f}, V_R: {:.07f}".format(V_L, V_R))
         if render == 1:
             # print("Calculated load volumes vs real: {:.07f}, {:.07f} | {:.07f}, {:.07f} ".format(
             #     V_L, V_R, self.pump.Lchamber.load_V, self.pump.Rchamber.load_V ))
@@ -604,7 +594,7 @@ class PumpRealEnvVar_Two(PumpEnv):
 
     def render(self, time=0, title='', filename=None):
         # Render the environment to the screen
-        self.pump.render(time, title, filename)
+        return self.pump.render(time, title, filename)
         print("TODO")  # TODO: render real pump
 
     def tim(self, task_name):
