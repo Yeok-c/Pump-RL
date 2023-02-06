@@ -4,7 +4,7 @@ from stable_baselines3.common.logger import TensorBoardOutputFormat
 class SummaryWriterCallback(BaseCallback):
 
     def _on_training_start(self):
-        self._log_freq = 1000  # log every 1000 calls
+        self._log_freq = 100  # log every 1000 calls
 
         output_formats = self.logger.output_formats
         # Save reference to tensorboard formatter object

@@ -11,6 +11,8 @@ from pump_env import PumpEnv
 # import matplotlib.pyplot as plt
 from scipy import signal
 import time
+import matplotlib.pyplot as plt
+import pickle
 
 
 P_0 = 1.01*1e5  # Pa
@@ -58,7 +60,8 @@ class PumpRealEnvVar_Two(PumpEnv):
             # goal_pressure_min, goal_pressure_min, 
             0.01*P_0, 0.01*P_0, 
             0.01*P_0, 0.01*P_0, 
-            0.049, 0.049, -0.05, 
+            0.030, 0.030, -0.015, 
+            # 0.049, 0.049, -0.05, 
             0.0, 0.0, 0.0, 0.0, 0.0,
             LOAD_V_RANGE[0], LOAD_V_RANGE[0]
             # self.load_range[0], self.load_range[0]
@@ -70,7 +73,8 @@ class PumpRealEnvVar_Two(PumpEnv):
             # goal_pressure_max, goal_pressure_max,
             10*P_0, 10*P_0, 
             10*P_0, 10*P_0, 
-            0.151, 0.151, +0.05, 
+            0.066, 0.066, +0.015, 
+            # 0.151, 0.151, +0.05, 
             1.0, 1.0, 1.0, 1.0, 1.0,
             LOAD_V_RANGE[1], LOAD_V_RANGE[1]
             # self.load_range[1], self.load_range[1]
@@ -146,7 +150,13 @@ class PumpRealEnvVar_Two(PumpEnv):
         # else:
         #     goal_P_M = -0.013
         
-        goal_P_M = action[0] * 0.006 # lim to 0.013 for now
+        goal_P_M = action[0] * self.pump.P_M_R_Limitation # lim to 0.013 for now
+        if goal_P_M > self.pump.P_M_R_Limitation:
+            goal_P_M = self.pump.P_M_R_Limitation
+
+        if goal_P_M < self.pump.P_M_L_Limitation:
+            goal_P_M = self.pump.P_M_L_Limitation
+
         move_distance = goal_P_M - prev_P_M
         if move_distance >= 0:
             self.pump.move_motor_to_R(move_distance)
@@ -169,6 +179,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         # else:
         #     print("Action[1] error")
         
+        # PREVIOUS LOCATION FOR VALVES ACTION =========
         pump_action = np.argmax(action[1:])
         if pump_action == 0:
             pass
@@ -182,7 +193,8 @@ class PumpRealEnvVar_Two(PumpEnv):
             self.pump.open_R_load_valve()
         if pump_action == 5:
             self.pump.open_inner_valve()
-        
+        # -----------------------------------------------
+
         self.tim("Open valve")
 
         # if action[1] > 0:
@@ -421,6 +433,11 @@ class PumpRealEnvVar_Two(PumpEnv):
         # except:
         #     observation = np.concatenate((self.step_observation, self.step_observation)) # stack two observations
 
+        # soft reset
+        self.pump.set_valves([1,1,1,1,1])
+        self.pump.set_position(0)
+        self.pump.set_valves([0,0,0,0,0])
+
         # Calibrate
         self.tim("Step observation finished")
         V_L, V_R = self.calibrate(render=True)
@@ -436,9 +453,10 @@ class PumpRealEnvVar_Two(PumpEnv):
         # self.pump = real_pump()  # real pump
 
         # soft reset
-        self.pump.set_position(0)
         self.pump.set_valves([1,1,1,1,1])
+        self.pump.set_position(0)
         self.pump.set_valves([0,0,0,0,0])
+
         ## Initialization
         self.done = False
         self.reward = 0
@@ -603,112 +621,242 @@ class PumpRealEnvVar_Two(PumpEnv):
         # print("Time elapsed  {:.03f} for {}".format(past_time*1000, task_name))
         self.last_time = current_time
 
+
+    def experiment_pump_properties(self, step_size=0.1):
+        P_M_ =[]
+        LCHAMBER_P_=[]
+        RCHAMBER_P_=[]
+
+        # Example action
+        # (c) Max right, open right load valve (equalize load and chamber pressures)
+        # [ 1, 0, 0, 0, 0, 1, 0,], 
+        #   PM N  lL cL cR lR I  notation
+        pm = 0
+        def _left_to_right(title=''):        
+            experiment_range = np.arange(-1, 1, step_size)
+            # First loop: -0.08 to 0.08
+            for pm in experiment_range:
+                action = [pm, 1, 0, 0, 0, 0, 0,] # Open no valves, move to p_m 
+                _,_,_,_ = self.step(action)
+                self.render(1, title='{}, P_M={:.05f}'.format(title, env.pump.P_M))
+                _print()
+        
+        def _right_to_left(title=''):
+            experiment_range = -np.arange(-1, 1, step_size)
+            # Second loop: 0.08 to -0.08
+            for pm in experiment_range:
+                action = [pm, 1, 0, 0, 0, 0, 0,] # Open no valves, move to p_m 
+                _,_,_,_ = self.step(action)
+                self.render(1, title='{}, P_M={:.05f}'.format(title, env.pump.P_M))
+                _print()
+        
+        def _action(action, title=''):
+            _,_,_,_ = self.step(action)
+            self.render(1, title='{}, P_M={:.05f}'.format(title, env.pump.P_M))
+
+        def _print():
+            print("P_M, P_L, P_R | {: .05f} | {: 7.05f} | {: 7.05f}".format(
+                self.pump.P_M, self.pump.pressure[0], self.pump.pressure[1]
+            # self.Lchamber.P =   self.pressure[0]
+            # self.Rchamber.P =   self.pressure[1]
+            ))
+            P_M_.append(self.pump.P_M)
+            LCHAMBER_P_.append(self.pump.pressure[0])
+            RCHAMBER_P_.append(self.pump.pressure[1])
+        
+
+        # # soft reset
+        # self.pump.set_valves([1,1,1,1,1])
+        # self.pump.set_position(0)
+        # self.pump.set_valves([0,0,0,0,0])
+
+        # Pumping air into the right
+        #         PM N  lL cL cR lR I  notation
+        _action([-1, 0, 0, 0, 1, 0, 0,], title='Move left, open right valve') # Move left, open right valve
+
+        # Eq all
+        self.pump.set_valves([1,1,1,1,1])
+        self.pump.set_valves([0,0,0,0,0])
+
+        _left_to_right(title='1st loop pumping air into the right')
+        _action([ 1, 0, 0, 1, 0, 0, 0,], title='Move right, open left valve')
+        _action([-1, 0, 0, 0, 0, 0, 1,], title='Move left, open inner valve')
+        _left_to_right(title='2nd loop pumping air into the right')
+
+
+        # Pumping air into the left
+        #         PM N  lL cL cR lR I  notation
+        _action([ 1, 0, 0, 1, 0, 0, 0,], title='Move right, open left valve') 
+
+        # Eq all
+        self.pump.set_valves([1,1,1,1,1])
+        self.pump.set_valves([0,0,0,0,0])
+
+        _right_to_left(title='1st loop pumping air into the left')
+        _action([-1, 0, 0, 0, 1, 0, 0,], title='Move left, open right valve')
+        _action([ 1, 0, 0, 0, 0, 0, 1,], title='Move right, open inner valve')
+        _right_to_left(title='2nd loop pumping air into the left')
+
+
+        # Pumping air out of the right
+        #         PM N  lL cL cR lR I  notation
+        _action([ 1, 0, 0, 0, 1, 0, 0,], title='Move right, open right valve') 
+
+        # Eq all        
+        self.pump.set_valves([1,1,1,1,1])
+        self.pump.set_valves([0,0,0,0,0])
+
+
+        _right_to_left(title='1st loop pumping air out of the right')
+        _action([-1, 0, 0, 1, 0, 0, 0,], title='Move left, open right valve')
+        _action([ 1, 0, 0, 0, 0, 0, 1,], title='Move right, open inner valve')
+        _right_to_left(title='2nd loop pumping air out of the right')
+
+        # Pumping air out of the left
+        #         PM N  lL cL cR lR I  notation
+        _action([-1, 0, 0, 1, 0, 0, 0,], title='Move left, open left valve') 
+
+        # Eq all
+        self.pump.set_valves([1,1,1,1,1])
+        self.pump.set_valves([0,0,0,0,0])
+
+
+        _left_to_right(title='1st loop pumping air out of the left')
+        _action([ 1, 0, 0, 0, 1, 0, 0,], title='Move left, open right valve')
+        _action([-1, 0, 0, 0, 0, 0, 1,], title='Move right, open inner valve')
+        _left_to_right(title='2nd loop pumping air out of the left')
+
+
+        _action([ 0, 1, 0, 0, 0, 0, 0,], title='Reset to initial pos')
+        # Eq all        
+        self.pump.set_valves([1,1,1,1,1])
+        self.pump.set_position(0)
+        self.pump.set_valves([0,0,0,0,0])
+
+
+        pickle.dump([P_M_, LCHAMBER_P_, RCHAMBER_P_], open( "./scripts/chamber_experiments_real_009_updated_motor_r.p", "wb" ) )
+
+
+
+
+cyan = '#8ECFC9'
+orange = '#FFBE7A'
+orange_1 = '#FA9F6F' # '#FA7F6F'
+magenta = '#FA7F6F'
+blue = '#82B0D2'
+violet = '#BEB8DC'
+beige = '#E7DAD2'
+grey = '#999999'
+grey_darker = '#444444'
+
 if "__main__" == __name__:
-
-    # # Sequence 1: same as paper
-    # action_names = ([
-    #     '(a,b) Max left pos, open left valve',
-    #     '(c) Max left pos, close all valve',
-    #     '(d) Max left pos, open bottom valve',
-    #     '(e) Max left pos, close bottom valve',
-    #     '(f) Max left pos, open right valve',
-    #     '(g) Max right pos, open right valve',
-    #     '(h) Max right pos, close all valve',
-    #     '(i) Max right pos, open bottom valve',
-    #     '(j) Max right pos, close all valve',
-    #     '(k) Max right pos, open left valve',])
-    # action_sequence = 0.5*np.array([
-    #     [-1, 1, 0, 0], # (a,b) Max left position, open left valve
-    #     [-1, 0, 0, 0], # (c) Close all valve
-    #     [-1, 0, 1, 0], # (d) open bottom valve
-    #     [-1, 0, 0, 0], # (e) Close bottom valve
-    #     [-1, 0, 0, 1], # (f) Open right valve
-    #     [ 1, 0, 0, 1], # (g) Max right position while opening right valve
-    #     [ 1, 0, 0, 0], # (h) Max right position while close all valve
-    #     [ 1, 0, 1, 0], # (i) Max right position while opening bottom valve
-    #     [ 1, 0, 0, 0], # (j) Max right position while close all valve
-    #     [ 1, 1, 0, 0], # (k) Max right position while open left valve
-    #     ])
-
-    # # Sequence 2: positive pressure only as seen before
-    # action_names = ([
-    #     '(a) Max right position, open left valve',
-    #     '(b) Max right position, close all valve',
-    #     '(c) Max left position, open bottom valve',
-    #     '(d) Max left position, open left valve',
-    # ])
-    
-    # action_sequence = np.array([
-    #     [ 1, 1, 0, 0], # (a) Max right position, open left valve
-    #     [ 1, 0, 0, 0], # (b) Max right position, close all valve
-    #     [-1, 0, 1, 0], # (c) Max left position, open bottom valve
-    #     [-1, 1, 0, 0], # (d) Max left position, open left valve
-    #     ])
-    
-    # Sequence 3: negative pressure (reverse of what we seen before)
-    # action_names = ([
-    #     '(a) Max right position, open right valve',
-    #     '(b) Max right position, close all valve',
-    #     '(c) Max left position, open bottom valve',
-    #     '(d) Max left position, open right valve',
-    # ])
-    
-    # action_sequence = np.array([
-    #     [ 1, 0, 0, 1], # (a) Max right position, open right valve
-    #     [ 1, 0, 0, 0], # (b) Max right position, close all valve
-    #     [-1, 0, 1, 0], # (c) Max left position, open bottom valve
-    #     [-1, 0, 0, 1], # (d) Max left position, open right valve
-    #     ])
-    
-    # Sequence 3: Positive and negative pressure with 3 chambers
-    # action_names = ([
-    #     "",
-    #     "",
-    #     "",
-    #     "",
-    #     "",
-    #     "",
-    # ])
-    
-    # action_sequence = np.array([
-    #     [ 1, 0, 0, 0, 1, 0], # (a) Max right position, close right valve
-    #     [ 1, 0, 0, 1, 0, 0], # (a) Max right position, open right valve
-    #     [ 1, 0, 0, 0, 0, 0], # (b) Max right position, close all valve
-    #     [-1, 0, 1, 0, 0, 0], # (c) Max left position, open bottom valve
-    #     [-1, 0, 0, 1, 0, 0], # (d) Max left position, open right valve
-    #     [-1, 0, 0, 0, 1, 0], # "(d) Max left position, open load valve",
-    #     ])
-
-    # while 1:
-    #     env.reset()
-    #     # for i in range(env.max_episodes):
-    #     for name, action in zip(action_names, action_sequence):
-    #         # action = env.action_space.sample()
-    #         observation, reward, done, info = env.step(action)
-    #         env.render(0, title=str(action))
 
     udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
     udp.open()
     print("Open udp")
 
-
-    print("\n\n\n\n Creating env")
     env = PumpRealEnvVar_Two(
         udp = udp,
-        K_deform=0.05,
-        obs_noise=0.05
-    )
-    # print("\n\n\n\n Resetting env")        
-    # env.reset()
-    # env.render(time=1, title='Reset')
+        load_range=[0, 2.0], 
+        goal_pressure_R_range=[0.5, 1.7],
+        goal_pressure_L_range=[0.5, 1.7],
+        max_episodes=10000,
+        use_combined_loss = True,
+        use_step_loss = False,
+        )
 
-    print("\n\n\n\n Starting actions")        
-    for i in range(env.max_episodes):
-        print("\n\n\n\nCurrent step: ", i)
-        action = env.action_space.sample()
-        obs, _, _, _ = env.step(action)
-        env.print_step_info()
-        env.render(time=1)
+    env.experiment_pump_properties()
+
+    def load_experiment_results(filepath = "./scripts/chamber_experiments_real.p"):
+        [P_M_, LCHAMBER_P_, RCHAMBER_P_] = pickle.load( open( filepath, "rb" ) )
+        P_M_=np.array(P_M_) 
+        LCHAMBER_P_=np.array(LCHAMBER_P_) 
+        RCHAMBER_P_=np.array(RCHAMBER_P_)
+        return P_M_, LCHAMBER_P_, RCHAMBER_P_
+
+    fig, ax = plt.subplots(ncols=1, nrows=3, figsize=(20, 5))
+    ax=ax.flatten()
+
+    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_range_010.p")
+    ax[0].plot(P_M_, linestyle='dashed', color=blue)
+    ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=blue)
+    ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=blue)
+
+    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_sim_range_009.p")
+    ax[0].plot(P_M_, linestyle='solid', color=blue)
+    ax[1].plot(LCHAMBER_P_, linestyle='solid', color=blue)
+    ax[2].plot(RCHAMBER_P_, linestyle='solid', color=blue)
+
+    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_range_009.p")
+    ax[0].plot(P_M_, linestyle='dashed', color=orange)
+    ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=orange)
+    ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=orange)
+
+    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_sim_range_008.p")
+    ax[0].plot(P_M_, linestyle='solid', color=orange)
+    ax[1].plot(LCHAMBER_P_, linestyle='solid', color=orange)
+    ax[2].plot(RCHAMBER_P_, linestyle='solid', color=orange)
+
+    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_009_motor_r_038.p")
+    ax[0].plot(P_M_, linestyle='dashed', color=magenta)
+    ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=magenta)
+    ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=magenta)
+
+    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_009_motor_r_035.p")
+    ax[0].plot(P_M_, linestyle='dashed', color=grey_darker)
+    ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=grey_darker)
+    ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=grey_darker)
+
+
+    ax[0].legend([
+        "Real, range 0.010", 
+        "Sim, range 0.009", 
+        "Real, range 0.009", 
+        "Sim, range 0.008", 
+        "Real, range 0.009, motor_r 0.038",
+        "Real, range 0.009, motor_r 0.035",
+    ])
+
+    ax[1].legend([
+        "Real, range 0.010", 
+        "Sim, range 0.009", 
+        "Real, range 0.009", 
+        "Sim, range 0.008",         
+        "Real, range 0.009, motor_r 0.038",
+        "Real, range 0.009, motor_r 0.035",
+
+    ])
+
+    ax[2].legend([
+        "Real, range 0.010", 
+        "Sim, range 0.009", 
+        "Real, range 0.009", 
+        "Sim, range 0.008", 
+        "Real, range 0.009, motor_r 0.038",
+        "Real, range 0.009, motor_r 0.035",
+    ])
+
+
+    fig.savefig('./scripts/changed_params_pressures.png', format = 'png')
+    plt.show()
+
+
+    # env = PumpRealEnvVar_Two(
+    #     udp = udp,
+    #     K_deform=0.05,
+    #     obs_noise=0.05
+    # )
+    # # print("\n\n\n\n Resetting env")        
+    # # env.reset()
+    # # env.render(time=1, title='Reset')
+
+    # print("\n\n\n\n Starting actions")        
+    # for i in range(env.max_episodes):
+    #     print("\n\n\n\nCurrent step: ", i)
+    #     action = env.action_space.sample()
+    #     obs, _, _, _ = env.step(action)
+    #     env.print_step_info()
+    #     env.render(time=1)
 
     # env.set_load_and_goal_pressure(0.01, 1.1*P_0)
     # for i in range(5):

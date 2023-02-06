@@ -12,9 +12,9 @@ import numpy as np
 P_0 = 1.01*1e5  # Pa
 
 test_loads=[
-    # 0, 0.5, 
+    0, 0.5, 
     1, 2, 
-    # 3, 4, 5, 6, 7, 8
+    3, 4, 5, 6, 7, 8
 ]
 
 udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
@@ -51,10 +51,16 @@ for load in test_loads:
     # model_run = "1671860789"
     # model_step = "11000000"       
 
-    model_dir = "models"
-    model_run = "1673923036"
-    model_step = "4000000"    
+    # model_dir = "models"
+    # model_run = "1673923036"
+    # model_step = "4000000"    
 
+    # model_path = "./logs/rl_model_17502000_steps" # for var load experiment
+
+
+    model_dir = "models"
+    model_run = "1674006678"
+    model_step = "12000000"    
     model_path = f"{model_dir}/{model_run}/{model_step}"  # for var load experiment
     model = SAC.load(model_path, env=env, print_system_info=True)
 

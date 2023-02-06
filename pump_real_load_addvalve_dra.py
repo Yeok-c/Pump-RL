@@ -98,14 +98,18 @@ class chamber:
 # /\  |——————|  /\  |——————|  /\
 # IO0  VL, PL   IO2  VR, PR   IO1
 
+P_M_LIMITATIONS_MASTER=0.009
+
 class real_pump:
     def __init__(self, udp):
         # real
         self.P_M = 0  # motor
-        self.P_M_L_Limitation = -0.015
-        self.P_M_R_Limitation = +0.015
+        self.P_M_L_Limitation = -P_M_LIMITATIONS_MASTER# -0.008 #-0.015
+        self.P_M_R_Limitation = +P_M_LIMITATIONS_MASTER# +0.008 #+0.015
         self.valve = [0,0,0,0,0]  # 0: close, 1: open  [L, R, inner, load L, load R]
         self.pressure = [0,0,0,0]  # [Lc, Rc, load L, load R]
+        self.pressure_old = self.pressure
+        self.stagnant_count = 0
         self.udp = udp
         # real pump init
         # try:
@@ -222,6 +226,23 @@ class real_pump:
             # self.Lchamber.load_P =   self.pressure[2]
             # self.Rchamber.load_P =   self.pressure[3]
             print('Received pressures:', self.pressure)
+
+            # If completely similar
+            if (self.pressure_old == self.pressure).all():
+                self.stagnant_count += 1
+            else:
+                self.stagnant_count = 0
+            if self.stagnant_count > 3:
+                # input('Stagnant pressure detected, shutting off valves and restarting pressure sensors...')
+                # self.set_valves([0,0,0,0,0])
+                # time.sleep(1)
+                # input('Stagnant pressure detected, restarting pressure sensors...')
+                print('Stagnant pressure detected, restarting pressure sensors...')
+                msg = "resPr"
+                self.udp.send(msg)
+
+            self.pressure_old = self.pressure
+        
         return self.pressure
 
     def get_position(self):
@@ -259,6 +280,9 @@ class real_pump:
             elif rc!='' and rc[0] == "falPo":
                 print("Moving failed! Reset...")
                 time.sleep(2)
+                moving_done = self.set_position(position)
+            elif rc!='' and rc[0] == "resta":
+                print("Restarted hardware, set position again")
                 moving_done = self.set_position(position)
         self.get_position()
         return moving_done
