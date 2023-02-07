@@ -589,6 +589,111 @@ class PumpRealEnvVar_Two(PumpEnv):
             # print("TODO")  # TODO: print real volumes
         return V_L, V_R
         
+
+
+    def calibrate_advanced(self, render=False, steps=10):
+        action_names = np.array([
+            # Calibrate left load first. PC1 is P_0 as initialized
+            "(a) Max right, open left valve to intake air ",
+            "(b) Max left. (set PC1 to current reading)",
+            "(c) Max left, open left load valve",
+            # "(d) Take reading since now they're equalized to P2", 
+
+            # Calibrate right load now. PC1 is P_0 as initialized
+            "(a) Max left, open right valve to intake air ",
+            "(b) Max right. (set PC1 to current reading)",
+            "(c) Max right, open right load valve",
+            # "(d) Take reading since now they're equalized to P2",
+
+            ])
+       
+        action_sequence = np.array([
+
+        # Calibrate left load first. PC1 is P_0 as initialized
+        #    N lL cL cR lR  I  notation
+        [ 1, 0, 0, 1, 0, 0, 0,], # (a) Max right (optional), open left valve to intake air 
+        [-1, 1, 0, 0, 0, 0, 0,], # (b) Max left. (set PC1 to current reading)
+        [-1, 0, 1, 0, 0, 0, 0,], # (c) Max left, open left load valve (equalize load and chamber pressures)
+        # Now the left load and left chamber pressure have equalized to P2 
+        
+        [-1, 0, 0, 0, 1, 0, 0,], # (a) Max left (optional), open right valve to intake air 
+        [ 1, 1, 0, 0, 0, 0, 0,], # (b) Max right. (set PC1 to current reading)
+        [ 1, 0, 0, 0, 0, 1, 0,], # (c) Max right, open right load valve (equalize load and chamber pressures)
+        # Now the right load and right chamber pressure have equalized to P2 
+        
+        ])
+
+
+        # 0,1 self.goal_pressure_L, float(self.goal_pressure_L < P_0),
+        # 2,3 self.goal_pressure_R, float(self.goal_pressure_R < P_0),
+        # 4,5 self.pump.Lchamber.load_P, self.pump.Rchamber.load_P, 
+        # 6,7 self.pump.Lchamber.P, self.pump.Rchamber.P, 
+        # # self.pump.Lchamber.V, self.pump.Rchamber.V,  # V is not available in the real pump
+        # 9,10 CHAMBER_LEN + self.pump.P_M, CHAMBER_LEN - self.pump.P_M,
+        # 11 self.pump.P_M,
+        # 12, 13, 14, 15, 16 self.pump.valve[0], self.pump.valve[1], self.pump.valve[2], self.pump.valve[3], self.pump.valve[4],  # converge faster but not stable
+        # 17, 18 self.load_L, self.load_R  # load
+
+        # self.Lchamber.P =   self.pressure[0]
+        # self.Rchamber.P =   self.pressure[1]
+        # self.Lchamber.load_P =   self.pressure[2]
+        # self.Rchamber.load_P =   self.pressure[3]
+        
+        # for i in range(self.max_episodes):
+        for i, (name, action) in enumerate(zip(action_names, action_sequence)):
+            print(name, " action: ",action)
+            _,_,_,_ = self.step(action)
+            # if render==1:
+                # self.render(0, title=name)
+            if i == 1:
+                # P_L1 = self.pump.Lchamber.load_P
+                # P_C1 = self.pump.Lchamber.P
+                # self.pump.get_pressure()  # real pump
+                P_L1 = self.pump.pressure[2]
+                P_C1 = self.pump.pressure[0]
+            if i == 2:
+                # assert self.pump.Lchamber.load_P == self.pump.Lchamber.P
+                # P_2 = self.pump.Lchamber.P # which should also be observation[5]
+                # V_L = (P_2-P_C1)/(P_L1-P_2) * self.pump.Lchamber.V
+                # self.pump.get_pressure()  # real pump
+                P_2 = self.pump.pressure[0] # which should also be observation[5]
+
+                if P_L1-P_2 == 0: # If no change
+                    V_L = LOAD_V_RANGE[1]
+                    print("No change in pressure, set V_L to max (large load)")
+                else: # Default
+                    V_L = (P_2-P_C1)/(P_L1-P_2) * self.pump.Lchamber.V
+
+            if i == 4: # reading taking frames
+                # P_L1 = self.pump.Rchamber.load_P
+                # P_C1 = self.pump.Rchamber.P
+                # self.pump.get_pressure()  # real pump
+                P_L1 = self.pump.pressure[3] #self.Rchamber.load_P
+                P_C1 = self.pump.pressure[1] #self.Rchamber.P
+            if i == 5:
+                # assert self.pump.Rchamber.load_P==self.pump.Rchamber.P
+                # P_2 = self.pump.Rchamber.P
+                # V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber_V
+                # self.pump.get_pressure()  # real pump
+                P_2 = self.pump.pressure[1]  #self.Rchamber.P
+
+                if P_L1-P_2 == 0: # If no change
+                    V_R = LOAD_V_RANGE[1]
+                    print("No change in pressure, set V_R to max (large load)")
+                else: # Default
+                    V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber.V
+
+        print("Calibration complete, V_L: {:.07f}, V_R: {:.07f}".format(V_L, V_R))
+        if render == 1:
+            # print("Calculated load volumes vs real: {:.07f}, {:.07f} | {:.07f}, {:.07f} ".format(
+            #     V_L, V_R, self.pump.Lchamber.load_V, self.pump.Rchamber.load_V ))
+            print("Calculated load volumes vs real: {:.07f}, {:.07f} | UNKNOWN UNKNOWN TODO ".format(
+                V_L, V_R)) # self.pump.Lchamber.load_V, self.pump.Rchamber.load_V ))
+            # print("TODO")  # TODO: print real volumes
+        return V_L, V_R
+        
+
+
     def print_step_info(self):
         # print("Lchamber.P: {p1:.3f} Rchamber.P: {p2:.3f}| ".format(p1=self.pump.Lchamber.P/P_0, p2=self.pump.Rchamber.P/P_0),
         #       "Goal L {p1:.3f} | Goal R {p2:.3f} ".format(p1=self.goal_pressure_L/P_0, p2=self.goal_pressure_R/P_0),
