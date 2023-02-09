@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
 
     model_dir = "models"
-    model_run = "1673923036"
+    model_run = "1675862353"
     model_step = "4000000"    
 
 
@@ -160,6 +160,10 @@ if __name__ == "__main__":
 
 
     print("Actor: ", model.actor.latent_pi)
+    for i in range(10):
+        model.learn(total_timesteps=1000, reset_num_timesteps=False, 
+            tb_log_name=logname, progress_bar=True)    
+        model.save(f"{models_dir}/{i*1000}")
     # SCHED_TIMESTEPS = 1000
     # SAVE_TIMESTEPS = SCHED_TIMESTEPS*1
     # TOTAL_TIMESTEPS = timesteps # 50*1000000
@@ -201,18 +205,18 @@ if __name__ == "__main__":
     #         model.save(f"{models_dir}/{i}")
 
     # Save a checkpoint every 1000 steps
-    checkpoint_callback = CheckpointCallback(
-    save_freq=1000,
-    save_path="./logs/",
-    name_prefix="rl_model",
-    save_replay_buffer=True,
-    )
+    # checkpoint_callback = CheckpointCallback(
+    # save_freq=1000,
+    # save_path="./logs/",
+    # name_prefix="rl_model",
+    # save_replay_buffer=True,
+    # )
 
-    # model = SAC("MlpPolicy", "Pendulum-v1")
-    # model.learn(10000, callback=checkpoint_callback)
+    # # model = SAC("MlpPolicy", "Pendulum-v1")
+    # # model.learn(10000, callback=checkpoint_callback)
 
-    model.learn(total_timesteps=20000, reset_num_timesteps=False, 
-        tb_log_name=logname, callback=checkpoint_callback, progress_bar=True)
+    # model.learn(total_timesteps=20000, reset_num_timesteps=False, 
+    #     tb_log_name=logname, callback=checkpoint_callback, progress_bar=True)
     
     # model.save(f"{models_dir}/{i}")
     

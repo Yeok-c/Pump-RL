@@ -71,16 +71,21 @@ def demo_dog(env, step_size=0.1):
         # _action([-1, 0, 0, 0, 0, 0, 1,], title='Move left, open inner valve')
         # _action([ 1, 0, 0, 0, 0, 1, 0,], title='Move right, open right load valve') 
 
+        env.pump.set_valves([0, 0, 1, 1, 0]) # set loads to open
         _action([-1, 0, 0, 0, 1, 0, 0,], title='Move left, open right valve') # Move left, open right valve
-        _action([ 1, 1, 0, 0, 0, 0, 0,], title='Move right, open right load valve') 
-        env.pump.set_valves([0, 0, 0, 1, 0]) # set loads to open
-        env.pump.set_valves([0, 0, 0, 1, 0]) # set loads to open
+        _action([ 1, 0, 0, 0, 0, 1, 0,], title='Move right, open right load valve') 
+        # env.pump.set_valves([0, 0, 0, 1, 0]) # set loads to open
 
-    #             PM N  lL cL cR lR I  notation
-        _action([-1, 0, 0, 0, 1, 0, 0,], title='Move left, open right valve') # Move left, open right valve
-        _action([ 1, 0, 0, 1, 0, 0, 0,], title='Move right, open left valve')
-        _action([-1, 0, 0, 0, 0, 0, 1,], title='Move left, open inner valve')
-        _action([ 1, 1, 0, 0, 0, 0, 0,], title='Move right, open right load valve') 
+#                     PM N  lL cL cR lR I  notation
+        for i in range(3):
+            _action([-1, 0, 0, 0, 0, 0, 1,], title='Move left, open right valve') # Move left, open right valve
+            _action([ 1, 0, 0, 1, 0, 0, 0,], title='Move right, open inner valve')
+
+
+        # _action([-1, 0, 0, 0, 1, 0, 0,], title='Move left, open right valve') # Move left, open right valve
+        # _action([ 1, 0, 0, 1, 0, 0, 0,], title='Move right, open left valve')
+        # _action([-1, 0, 0, 0, 0, 0, 1,], title='Move left, open inner valve')
+        # _action([ 1, 1, 0, 0, 0, 0, 0,], title='Move right, open right load valve') 
         if both_valves == False:
             env.pump.set_valves([0, 0, 0, 1, 0]) # set loads to open
             env.pump.set_valves([0, 0, 0, 1, 0]) # set loads to open
@@ -88,14 +93,15 @@ def demo_dog(env, step_size=0.1):
     #         PM N              lL cL cR lR I  notation
 
             # env.pump.set_valves([1, 0, 0, 1, 0]) # set loads to open
-            env.pump.set_valves([0, 0, 0, 1, 0]) # set loads to open
-            env.pump.set_valves([0, 0, 0, 1, 0]) # set loads to open
-            # env.pump.set_valves([1, 1, 0, 1, 0]) # set loads to open
+            # env.pump.set_valves([0, 0, 0, 1, 0]) # set loads to open
             env.pump.set_valves([1, 1, 0, 1, 0]) # set loads to open
             env.pump.set_valves([1, 1, 0, 1, 0]) # set loads to open
-            # env.pump.set_valves([1, 1, 0, 0, 0]) # set loads to open
-            # env.pump.set_valves([1, 1, 0, 0, 0]) # set loads to open
-            # env.pump.set_valves([1, 0, 0, 1, 0]) # set loads to open
+            env.pump.set_valves([1, 1, 0, 1, 0]) # set loads to open
+#                 PM N  lL cL cR lR I  notation
+            # _action([-1, 0, 0, 1, 0, 0, 0,], title='Move left, open right valve') # Move left, open right valve
+            # _action([ 1, 1, 0, 0, 0, 0, 0,], title='Move right, open inner valve')
+            # env.pump.set_valves([1, 0, 0, 0, 0]) # set loads to open
+            # env.pump.set_valves([1, 0, 0, 0, 0]) # set loads to open
             
         # _action([-1, 0, 0, 0, 1, 0, 0,], title='Move left, open right valve') # Move left, open right valve
         # _action([ 1, 0, 0, 1, 0, 0, 0,], title='Move right, open left valve')
@@ -116,31 +122,32 @@ def demo_dog(env, step_size=0.1):
         # _action([ 1, 0, 0, 0, 0, 0, 1,], title='Move right, open inner valve')
         # _action([-1, 0, 1, 0, 0, 0, 0,], title='Move right, open right load valve') 
 
+#                     PM N  lL cL cR lR I  notation
+        env.pump.set_valves([1, 1, 0, 0, 0]) # set loads to open
         _action([ 1, 0, 0, 1, 0, 0, 0,], title='Move right, open left valve') 
-        # _action([-1, 0, 1, 0, 0, 0, 0,], title='Move right, open right load valve') 
-        _action([-1, 1, 0, 0, 0, 0, 0,], title='Move right, open right load valve') 
-        env.pump.set_valves([1, 0, 0, 0, 0]) # set loads to open
-        env.pump.set_valves([1, 0, 0, 0, 0]) # set loads to open
+        _action([-1, 0, 1, 0, 0, 0, 0,], title='Move left, open right load valve') 
+        # env.pump.set_valves([1, 0, 0, 0, 0]) # set loads to open
 
-        _action([ 1, 0, 0, 1, 0, 0, 0,], title='Move right, open left valve') 
-        _action([-1, 0, 0, 0, 1, 0, 0,], title='Move left, open right valve')
-        _action([ 1, 0, 0, 0, 0, 0, 1,], title='Move right, open inner valve')
-        _action([-1, 1, 0, 0, 0, 0, 0,], title='Move right, open right load valve') 
+        for i in range(3):
+    #                 PM N  lL cL cR lR I  notation
+            _action([ 1, 0, 0, 0, 0, 0, 1,], title='Move right, open left valve') 
+            _action([-1, 0, 0, 0, 1, 0, 0,], title='Move left, open inner valve')
+
         if both_valves == False:
             env.pump.set_valves([1, 0, 0, 0, 0]) # set loads to open
             env.pump.set_valves([1, 0, 0, 0, 0]) # set loads to open
         else:
 
     #         PM N              lL cL cR lR I  notation
-            # env.pump.set_valves([1, 0, 0, 1, 0]) # set loads to open
-            env.pump.set_valves([1, 0, 0, 0, 0]) # set loads to open
-            env.pump.set_valves([1, 0, 0, 0, 0]) # set loads to open
-            # env.pump.set_valves([1, 0, 1, 1, 0]) # set loads to open
+            # env.pump.set_valves([1, 0, 0, 0, 0]) # set loads to open
             env.pump.set_valves([1, 0, 1, 1, 0]) # set loads to open
             env.pump.set_valves([1, 0, 1, 1, 0]) # set loads to open
-            # env.pump.set_valves([0, 0, 1, 1, 0]) # set loads to open
-            # env.pump.set_valves([0, 0, 1, 1, 0]) # set loads to open
-            # env.pump.set_valves([1, 0, 0, 1, 0]) # set loads to open
+            env.pump.set_valves([1, 0, 1, 1, 0]) # set loads to open
+    #                 PM N  lL cL cR lR I  notation
+            # _action([ 1, 0, 0, 0, 1, 0, 0,], title='Move right, open left valve') 
+            # _action([-1, 1, 0, 0, 0, 0, 0,], title='Move left, open inner valve')
+            # env.pump.set_valves([0, 0, 0, 1, 0]) # set loads to open
+            # env.pump.set_valves([0, 0, 0, 1, 0]) # set loads to open
 
         # _action([ 1, 0, 0, 1, 0, 0, 0,], title='Move right, open left valve') 
         # _action([-1, 0, 0, 0, 1, 0, 0,], title='Move left, open right valve')
@@ -148,9 +155,11 @@ def demo_dog(env, step_size=0.1):
         # # _right_to_left(title='2nd loop pumping air into the left')
         # _action([-1, 0, 1, 0, 0, 0, 0,], title='Move right, open right load valve') 
         
+
     # Eq all
-    env.pump.set_valves([1,1,1,1,1])
-    env.pump.set_valves([0,0,0,0,0])
+    # env.pump.set_valves([1,1,1,1,1])
+    # env.pump.set_valves([0,0,0,0,0])
+
     _charge_l()
     # _charge_l()
     _charge_r()
