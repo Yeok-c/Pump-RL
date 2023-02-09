@@ -12,9 +12,7 @@ import numpy as np
 P_0 = 1.01*1e5  # Pa
 
 test_loads=[
-    0, 0.5, 
-    1, 2, 
-    3, 4, 5, 6, 7, 8
+    0, 1, 2, 3, 4
 ]
 
 udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)

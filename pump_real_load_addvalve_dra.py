@@ -13,10 +13,10 @@ P_0 = 1.01*1e5  # Pa
 
 
 class chamber:
-    def __init__(self, L0, P0, load_volume=0, K_deform=0.05):
+    def __init__(self, L0=0.048, P0=P_0, load_volume=0, K_deform=0.05):
         # self.radius = 0.02  # Radius of chamber
-        self.a = 0.03  # The short edge of chamber cross surface
-        self.c = 0.03  # The long edge of chamber cross surface
+        self.a = 0.034 # 0.03  # The short edge of chamber cross surface
+        self.c = 0.0068 # 0.03  # The long edge of chamber cross surface
         self.n = 6   # The number of element size
         self.L = L0  # Length of chamber
         self.P = P0  # Pressure of chamber
@@ -44,8 +44,8 @@ class chamber:
         a = self.a
         c = self.c
         L = L
-
-        h = L / self.n / 2
+        
+        h = L / self.n / 2 # L=0.048 (m), n=6, h=0.004 (m)
         V_seg = 2 * a * a * h + math.sqrt(2) * a * c * h
         # V_seg = 2 * self.a * self.a * h + math.sqrt(2) * self.a * self.c * h
         V_seg = V_seg + (math.sqrt(2) * a + 2.0/3 * c) * math.sqrt(c*c - 2*h*h) * h
@@ -98,7 +98,7 @@ class chamber:
 # /\  |——————|  /\  |——————|  /\
 # IO0  VL, PL   IO2  VR, PR   IO1
 
-P_M_LIMITATIONS_MASTER=0.009
+P_M_LIMITATIONS_MASTER=0.008
 
 class real_pump:
     def __init__(self, udp):
@@ -129,7 +129,7 @@ class real_pump:
 
         # Estimate init chamber volume
 
-        L_L = 0.1
+        L_L = 0.048
         # chamber(self, L0, P0, load_volume=0, K_deform=0.05)
         self.testchamber = chamber(L_L, P_0)
         V_0 = self.testchamber.V 

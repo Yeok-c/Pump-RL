@@ -1,6 +1,7 @@
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3 import PPO, DDPG, TD3, SAC
 from pump_realenv_variable_load_two_DRA import PumpRealEnvVar_Two
+from pump_env_variable_load_two_DRA import PumpEnvVar_Two as PumpSimEnvVar_Two
 from curi_communication_udp import curi_communication_udp
 import pickle
 import os
@@ -12,10 +13,7 @@ import numpy as np
 P_0 = 1.01*1e5  # Pa
 
 test_loads=[
-    0, 0.5, 
-    1, 2, 
-    3, 4, 5, 6, 7, 8
-]
+    0 ]
 
 udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
 udp.open()
@@ -23,7 +21,10 @@ print("Open udp")
 
 MEAN_REWARD=[]
 STD_REWARD=[]
-for load in test_loads:
+# for load in test_loads:
+load = 0
+episodes = 10
+for ep in range(episodes):
     # Create environment
     env = PumpRealEnvVar_Two(
         # load_range=[0.1, 0.1], 
@@ -36,6 +37,18 @@ for load in test_loads:
         # obs_noise = 0.01,
         # K_deform = 0.01,
         udp=udp
+        )
+
+    env_sim = PumpSimEnvVar_Two(
+        # load_range=[0.1, 0.1], 
+        load_range=[load, load], 
+        goal_pressure_R_range=[0.5, 1.7],
+        goal_pressure_L_range=[0.5, 1.7],
+        max_episodes=100,
+        use_combined_loss = True,
+        use_step_loss = False,   
+        # obs_noise = 0.01,
+        # K_deform = 0.01,
         )
     load = str(load).replace('.', '_')
 
@@ -59,7 +72,7 @@ for load in test_loads:
 
     model_dir = "models"
     model_run = "1675862353"
-    model_step = "4000000"    
+    model_step = "6000000"    
 
     model_path = f"{model_dir}/{model_run}/{model_step}"  # for var load experiment
     model = SAC.load(model_path, env=env, print_system_info=True)
@@ -91,13 +104,10 @@ for load in test_loads:
     # print(f"mean_reward:{mean_reward:.2f} +/- {std_reward}\n")
 
     # Enjoy trained agent
-    # episodes = 10
-    # for ep in range(episodes):
-        # obs = env.reset()
+    # obs = env.reset()
 
     # only run a single episode
-    ep=1        
-    VL, VR = env.pump.V_L/env.pump.Lchamber.V, env.pump.V_R/env.pump.Rchamber.V
+    # ep=1        
     # env.goal_pressure_sequence_L=GL
     # env.goal_pressure_sequence_R=GR
     # env.render()
@@ -107,7 +117,8 @@ for load in test_loads:
     # print('env.load', env.load, 'env.goal_pressure', env.goal_pressure/P_0)
     # print("Goal pressure: {p:.2f}".format(p=env.goal_pressure/P_0), '=', env.goal_pressure, 'Pa')
 
-    P_L, P_R, P_R_G, P_L_G, R = [], [],[],[],[]
+    P_L, P_R, P_L_S, P_R_S, P_R_G, P_L_G, R, R_S = [], [],[],[],[], [], [], []
+    
     # Start simulation
     if not os.path.exists(f"./saved_figures/{load}"):
         os.system(f"mkdir ./saved_figures/{load}")
@@ -124,6 +135,14 @@ for load in test_loads:
     P_L_G = (env.goal_pressure_sequence_L-P_0)/1000
     done = False
 
+    # match sim properties to real env
+    env.pump.V_L = env.pump.V_L *2
+    env_sim.pump.V_L = env.pump.V_L
+    env_sim.pump.V_R = env.pump.V_R
+    env_sim.goal_pressure_sequence_L = env.goal_pressure_sequence_L
+    env_sim.goal_pressure_sequence_R = env.goal_pressure_sequence_R
+    VL, VR = env.pump.V_L/env.pump.Lchamber.V, env.pump.V_R/env.pump.Rchamber.V
+
     while not done:
         env_filename ="./saved_figures/{}/{}/step_{:03d}.png".format(load, ep, env.action_counter) 
         tracking_filename = "./saved_figures/{}/{}/tracking_step_{:03d}.png".format(load, ep, env.action_counter)
@@ -138,14 +157,16 @@ for load in test_loads:
         
         P_L.append((env.pump.pressure[2]-P_0)/1000)
         P_R.append((env.pump.pressure[3]-P_0)/1000)
-        # P_R.append((env.pump.Rchamber.load_P-P_0)/1000)
-        # P_L.append((env.pump.Lchamber.load_P-P_0)/1000)
+        P_L_S.append((env_sim.pump.Lchamber.load_P-P_0)/1000)
+        P_R_S.append((env_sim.pump.Rchamber.load_P-P_0)/1000)
         R.append(env.reward)
-        
+        R_S.append(env_sim.reward)
+
         # env.goal_pressure_sequence_L/1000
         # env.goal_pressure_sequence_R/1000
-        pickle.dump([P_L, P_R, P_R_G, P_L_G, R, VL, VR], open( "./scripts/save.p", "wb" ) )
-        os.system("python ./scripts/plot_goals_two.py")
+        pickle.dump([P_L, P_R, P_L_S, P_R_S, P_R_G, P_L_G, R, R_S, VL, VR], open( "./scripts/save_sim_and_real.p", "wb" ) )
+        # pickle.dump([P_L, P_R, P_R_G, P_L_G, R, VL, VR], open( "./scripts/save.p", "wb" ) )
+        os.system("python ./scripts/plot_goals_two_sim_and_real.py")
         # cv2.imshow('Goals vs achieved: Trained on sequential goals', cv2.imread('./scripts/file.png'))
         os.system("cp ./scripts/file.png {}".format(tracking_filename))
         
@@ -158,7 +179,13 @@ for load in test_loads:
         # print("obs:", obs[-1])
         # print('env.load', env.load)
         action, _states = model.predict(env.step_observation)
+        # action, _states = model.predict(env_sim.step_observation)
+        print("\n\n\n")
+        for idx in range(len(env.step_observation)):
+            print("{:02d}, sim, real: {:.6f}, {:.6f}, {}".format(idx, env_sim.step_observation[idx], env.step_observation[idx], env.observation_name[idx] ))
+        print("\n\n\n")
         obs, reward, done, info = env.step(action)
+        _, _, _, _ = env_sim.step(action)
         # print("Rchamber.P: {p:.3f} | ".format(p=env.pump.Rchamber.P/P_0),
         #       "Goal {p1} pressure {p2:.3f} | ".format(p1=env.goal_sequence_number, p2=env.goal_pressure/P_0),
         #       "Step reward: {p} | ".format(p=reward),
@@ -169,14 +196,14 @@ for load in test_loads:
         # )
 
     
-    pickle.dump([P_L, P_R, P_R_G, P_L_G, R, VL, VR], open( "./scripts/save.p", "wb" ) )
-    os.system("python ./scripts/plot_goals_two.py")
+    pickle.dump([P_L, P_R, P_L_S, P_R_S, P_R_G, P_L_G, R, R_S, VL, VR], open( "./scripts/save_sim_and_real.p", "wb" ) )
+    os.system("python ./scripts/plot_goals_two_sim_and_real.py")
     cv2.imshow('Goals vs achieved: Trained on sequential goals', cv2.imread('./scripts/file.png'))
     cv2.waitKey(1)
 
     os.system("cp ./scripts/file.png ./saved_figures/{}/tracking_results_ep_{}.png".format(load, ep))
     os.system("rm -rf ./saved_figures/*/*/tracking_step_*")
-    
+    os.system("cp ./scripts/save_sim_and_real.p ./saved_figures/{}/tracking_results_ep_{}.p".format(load, ep))
     os.system("ffmpeg -r 3 -i ./saved_figures/{p1}/{p2}/step_%03d.png -vcodec mpeg4 -y ./saved_figures/{p1}/tracking_results_ep_{p2}.mp4".format(p1=load, p2=ep))
 
     # cv2.waitKey(0)

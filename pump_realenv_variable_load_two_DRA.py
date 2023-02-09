@@ -17,7 +17,7 @@ import pickle
 
 P_0 = 1.01*1e5  # Pa
 MAX_STEP = 100
-CHAMBER_LEN = 0.1
+CHAMBER_LEN = 0.048 # 0.1
 LOAD_V_RANGE = np.array([0, 0.1])
 
 
@@ -38,8 +38,9 @@ class PumpRealEnvVar_Two(PumpEnv):
         # super(PumpEnv, self).__init__()
         self.observation_name = [
             "Goal_L[t]", "Goal_L[t+1]", 
-            "Goal_L[t+2]", "Goal_R[t]", 
-            # "Goal_R[t+1]", "Goal_R[t+2]",
+            # "Goal_L[t+2]", 
+            "Goal_R[t]", "Goal_R[t+1]", 
+            # "Goal_R[t+2]",
             "self.pump.Lchamber.load_P", "self.pump.Rchamber.load_P", "self.pump.Lchamber.P", "self.pump.Rchamber.P", 
             # self.pump.Lchamber.V, self.pump.Rchamber.V,  # V is not available in the real pump
             "CHAMBER_LEN + self.pump.P_M", "CHAMBER_LEN - self.pump.P_M", "self.pump.P_M",
@@ -775,7 +776,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         self.last_time = current_time
 
 
-    def experiment_pump_properties(self, step_size=0.1):
+    def experiment_pump_properties(self, step_size=0.25):
         P_M_ =[]
         LCHAMBER_P_=[]
         RCHAMBER_P_=[]
@@ -787,6 +788,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         pm = 0
         def _left_to_right(title=''):        
             experiment_range = np.arange(-1, 1, step_size)
+            # experiment_range = np.arange(-1, 1+step_size, step_size)
             # First loop: -0.08 to 0.08
             for pm in experiment_range:
                 action = [pm, 1, 0, 0, 0, 0, 0,] # Open no valves, move to p_m 
@@ -835,7 +837,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         _action([ 1, 0, 0, 1, 0, 0, 0,], title='Move right, open left valve')
         _action([-1, 0, 0, 0, 0, 0, 1,], title='Move left, open inner valve')
         _left_to_right(title='2nd loop pumping air into the right')
-
+        print("\n\nFinished test 1 out 4 \n\n")
 
         # Pumping air into the left
         #         PM N  lL cL cR lR I  notation
@@ -849,6 +851,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         _action([-1, 0, 0, 0, 1, 0, 0,], title='Move left, open right valve')
         _action([ 1, 0, 0, 0, 0, 0, 1,], title='Move right, open inner valve')
         _right_to_left(title='2nd loop pumping air into the left')
+        print("\n\nFinished test 2 out 4 \n\n")
 
 
         # Pumping air out of the right
@@ -864,6 +867,7 @@ class PumpRealEnvVar_Two(PumpEnv):
         _action([-1, 0, 0, 1, 0, 0, 0,], title='Move left, open right valve')
         _action([ 1, 0, 0, 0, 0, 0, 1,], title='Move right, open inner valve')
         _right_to_left(title='2nd loop pumping air out of the right')
+        print("\n\nFinished test 3 out 4 \n\n")
 
         # Pumping air out of the left
         #         PM N  lL cL cR lR I  notation
@@ -885,9 +889,10 @@ class PumpRealEnvVar_Two(PumpEnv):
         self.pump.set_valves([1,1,1,1,1])
         self.pump.set_position(0)
         self.pump.set_valves([0,0,0,0,0])
+        print("\n\nFinished test 4 out 4 \n\n")
 
 
-        pickle.dump([P_M_, LCHAMBER_P_, RCHAMBER_P_], open( "./scripts/chamber_experiments_real_009_updated_motor_r.p", "wb" ) )
+        pickle.dump([P_M_, LCHAMBER_P_, RCHAMBER_P_], open( "./scripts/chamber_experiments_real_latest.p", "wb" ) )
 
 
 
@@ -950,15 +955,17 @@ if "__main__" == __name__:
     ax[1].plot(LCHAMBER_P_, linestyle='solid', color=orange)
     ax[2].plot(RCHAMBER_P_, linestyle='solid', color=orange)
 
-    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_009_motor_r_038.p")
+    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_009_motor_r_035.p")
     ax[0].plot(P_M_, linestyle='dashed', color=magenta)
     ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=magenta)
     ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=magenta)
 
-    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_009_motor_r_035.p")
-    ax[0].plot(P_M_, linestyle='dashed', color=grey_darker)
-    ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=grey_darker)
-    ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=grey_darker)
+    prev_len = len(P_M_)
+    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_latest.p")
+    data_x = np.linspace(0, prev_len, len(P_M_))
+    ax[0].plot(data_x, P_M_, linestyle='dashed', color=grey_darker)
+    ax[1].plot(data_x, LCHAMBER_P_, linestyle='dashed', color=grey_darker)
+    ax[2].plot(data_x, RCHAMBER_P_, linestyle='dashed', color=grey_darker)
 
 
     ax[0].legend([
@@ -966,8 +973,8 @@ if "__main__" == __name__:
         "Sim, range 0.009", 
         "Real, range 0.009", 
         "Sim, range 0.008", 
-        "Real, range 0.009, motor_r 0.038",
         "Real, range 0.009, motor_r 0.035",
+        "Real, latest",
     ])
 
     ax[1].legend([
@@ -975,8 +982,8 @@ if "__main__" == __name__:
         "Sim, range 0.009", 
         "Real, range 0.009", 
         "Sim, range 0.008",         
-        "Real, range 0.009, motor_r 0.038",
         "Real, range 0.009, motor_r 0.035",
+        "Real, latest",
 
     ])
 
@@ -985,8 +992,8 @@ if "__main__" == __name__:
         "Sim, range 0.009", 
         "Real, range 0.009", 
         "Sim, range 0.008", 
-        "Real, range 0.009, motor_r 0.038",
         "Real, range 0.009, motor_r 0.035",
+        "Real, latest",
     ])
 
 

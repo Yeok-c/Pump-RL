@@ -10,10 +10,13 @@ P_0 = 1.01*1e5  # Pa
 
 
 class chamber:
-    def __init__(self, L0, P0, load_volume=0, K_deform=0.05):
+    def __init__(self, L0=0.048, P0=P_0, load_volume=0, K_deform=0.05):
         # self.radius = 0.02  # Radius of chamber
-        self.a = 0.03  # The short edge of chamber cross surface
-        self.c = 0.03  # The long edge of chamber cross surface
+
+        self.a = 0.034 # 0.03  # The short edge of chamber cross surface
+        self.c = 0.0068 # 0.03  # The long edge of chamber cross surface
+        # self.a = 0.03  # The short edge of chamber cross surface
+        # self.c = 0.03  # The long edge of chamber cross surface
         self.n = 6   # The number of element size
         self.L = L0  # Length of chamber
         self.P = P0  # Pressure of chamber
@@ -42,7 +45,7 @@ class chamber:
         c = self.c
         L = L
 
-        h = L / self.n / 2
+        h = L / self.n / 2 # L=0.048 (m), n=6, h=0.004 (m)
         V_seg = 2 * a * a * h + math.sqrt(2) * a * c * h
         # V_seg = 2 * self.a * self.a * h + math.sqrt(2) * self.a * self.c * h
         V_seg = V_seg + (math.sqrt(2) * a + 2.0/3 * c) * math.sqrt(c*c - 2*h*h) * h
@@ -99,8 +102,8 @@ class chamber:
 class hybrid_pump:
     def __init__(self, L_L, L_R, load_chamber_ratio_L, load_chamber_ratio_R, K_deform):
         self.P_M = 0  # motor
-        self.P_M_L_Limitation = -0.015
-        self.P_M_R_Limitation = +0.015
+        self.P_M_L_Limitation = -0.008 # -0.05
+        self.P_M_R_Limitation = +0.008 # +0.05
         
         self.testchamber = chamber(L_L, P_0)
         V_0 = self.testchamber.V 
@@ -116,7 +119,7 @@ class hybrid_pump:
         self.Lchamber_V_min = self.Lchamber.calculate_V(L_L - abs(self.P_M_L_Limitation))
         self.Rchamber_V_min = self.Rchamber.calculate_V(L_R - abs(self.P_M_R_Limitation))
         
-    def render(self, time=0, title='', filename=None, render_chamber_pressures=False):
+    def render(self, time=0, title='', filename=None):
         # MM_2_PX = 1000
         # self.img = np.zeros((200,400,3),dtype='uint8')
         # cv2.rectangle(self.img,(100,100),(100+int(0.2*MM_2_PX),100-10),(0,255,0),3)  # pump
@@ -143,13 +146,12 @@ class hybrid_pump:
         self.graphics = Graphics() 
         self.graphics.render_valve_and_motor(self.valve, self.P_M)
 
+        self.graphics.add_text_to_image('     \nLeft chamber', (220,120))
+        self.graphics.add_text_to_image(' \nRight chamber', (510,120))
 
-        if render_chamber_pressures == True:
-            self.graphics.add_text_to_image('   Left chamber \npressure: {: 06.2F} kPa'.format((self.Lchamber.P-P_0)/1000), (220,120))
-            self.graphics.add_text_to_image('   Right chamber \npressure: {: 06.2F} kPa'.format((self.Rchamber.P-P_0)/1000), (510,120))
-        else:
-            self.graphics.add_text_to_image('     \nLeft chamber', (220,120))
-            self.graphics.add_text_to_image(' \nRight chamber', (510,120))
+        # self.graphics.add_text_to_image('   Left chamber \npressure: {: 06.2F} kPa'.format((self.Lchamber.P-P_0)/1000), (220,120))
+        # self.graphics.add_text_to_image('   Right chamber \npressure: {: 06.2F} kPa'.format((self.Rchamber.P-P_0)/1000), (510,120))
+
 
         self.graphics.add_text_to_image('     Left load \npressure: {: 06.2F} kPa'.format((self.Lchamber.load_P-P_0)/1000), (15,300))
         self.graphics.add_text_to_image('     Right load \npressure: {: 06.2F} kPa'.format((self.Rchamber.load_P-P_0)/1000), (665,300))
@@ -254,7 +256,7 @@ class simulator:
 
 if __name__ == '__main__':
     pump = hybrid_pump(
-        L_L=0.1, L_R=0.1, 
+        L_L=0.048, L_R=0.048, 
         load_chamber_ratio_L=1.5, 
         load_chamber_ratio_R=0.8,
         K_deform=0
@@ -263,14 +265,13 @@ if __name__ == '__main__':
     print(pump.Lchamber_V_max, pump.Lchamber_V_min)
     print(pump.Rchamber_V_max, pump.Rchamber_V_min)
     pump.render(title='step 1', time=1)
-
-    pump.move_motor_to_R(0.015)
-    print('start:', 'self.pump.Lchamber.P:', pump.Lchamber.P, 'self.pump.Rchamber.P:', pump.Rchamber.P)
-    pump.render(time=1000)
-
-    pump.move_motor_to_L(0.015)
-    print('start:', 'self.pump.Lchamber.P:', pump.Lchamber.P, 'self.pump.Rchamber.P:', pump.Rchamber.P)
-    pump.render(time=1000)
+    pump.move_motor_to_R(0.05)
+    print(pump.Rchamber.P / P_0)
+    pump.render(time=1)
+    pump.move_motor_to_L(0.2)
+    pump.render(time=1)
+    pump.move_motor_to_R(0.1)
+    pump.render(time=1)
 
     '''
     pump = hybrid_pump(0.1, 0.1)
