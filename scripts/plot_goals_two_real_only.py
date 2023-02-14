@@ -64,11 +64,11 @@ ax.set_xlim([1, 100])
 
 
 ax.plot(np.arange(1, P_L.size+1), P_L, linestyle='dashed', color=blue) # '--b')
-ax.plot(np.arange(1, P_L_S.size+1), P_L_S, linestyle='dashed', color=cyan) # '--b')
+# ax.plot(np.arange(1, P_L_S.size+1), P_L_S, linestyle='dashed', color=cyan) # '--b')
 ax.plot(np.arange(2, P_L_G.size+2), P_L_G, linestyle='solid', color=blue) # '-b')
 # ax.plot(RX, RY, 'or')
 ax.plot(np.arange(1, P_R.size+1), P_R, linestyle='dashed', color=orange_1) # '--r')
-ax.plot(np.arange(1, P_R_S.size+1), P_R_S, linestyle='dashed', color=orange) # '--r')
+# ax.plot(np.arange(1, P_R_S.size+1), P_R_S, linestyle='dashed', color=orange) # '--r')
 ax.plot(np.arange(2, P_R_G.size+2), P_R_G, linestyle='solid', color=orange_1) #'-r')
 
 ax.set_title("Target and actuated pressures relative to atmosphere, \nV_L={:.01f}, \
@@ -76,7 +76,14 @@ ax.set_title("Target and actuated pressures relative to atmosphere, \nV_L={:.01f
 ax.set_xlabel("Timesteps", fontsize=16)
 ax.set_ylabel("kPa", fontsize=16)
 
-ax.legend(["P_L observed real", "P_L observed sim", "P_L goals", "P_R observed real", "P_R observed sim", "P_R goals"])
+ax.legend([
+    "P_L observed real", 
+    #"P_L observed sim", 
+    "P_L goals", 
+    "P_R observed real", 
+    #"P_R observed sim",
+     "P_R goals"
+    ])
 fig.savefig('./scripts/file.png')
 # fig.show()
 

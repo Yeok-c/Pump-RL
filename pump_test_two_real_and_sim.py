@@ -12,9 +12,6 @@ import numpy as np
 
 P_0 = 1.01*1e5  # Pa
 
-test_loads=[
-    0 ]
-
 udp = curi_communication_udp("127.0.0.1", 13331, "127.0.0.1", 13332)
 udp.open()
 print("Open udp")
@@ -22,10 +19,11 @@ print("Open udp")
 MEAN_REWARD=[]
 STD_REWARD=[]
 # for load in test_loads:
-load = 0
+
 episodes = 10
 for ep in range(episodes):
     # Create environment
+    load = 0
     env = PumpRealEnvVar_Two(
         # load_range=[0.1, 0.1], 
         load_range=[load, load], 
@@ -72,7 +70,7 @@ for ep in range(episodes):
 
     model_dir = "models"
     model_run = "1675862353"
-    model_step = "6000000"    
+    model_step = "16000000"    
 
     model_path = f"{model_dir}/{model_run}/{model_step}"  # for var load experiment
     model = SAC.load(model_path, env=env, print_system_info=True)
@@ -136,7 +134,8 @@ for ep in range(episodes):
     done = False
 
     # match sim properties to real env
-    env.pump.V_L = env.pump.V_L *2
+    # env.pump.V_L = env.pump.V_L *2
+    # env.pump.V_R = env.pump.V_R *2
     env_sim.pump.V_L = env.pump.V_L
     env_sim.pump.V_R = env.pump.V_R
     env_sim.goal_pressure_sequence_L = env.goal_pressure_sequence_L

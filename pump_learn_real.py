@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
     model_dir = "models"
     model_run = "1675862353"
-    model_step = "4000000"    
+    model_step = "16000000"    
 
 
     model_path = f"{model_dir}/{model_run}/{model_step}"  # for var load experiment

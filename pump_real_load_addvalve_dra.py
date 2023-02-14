@@ -72,17 +72,17 @@ class chamber:
 #         P = self.P_prev * self.V_prev / self.V
 #         return P
 
-#     def change_length(self, dL):
-#         self.V_prev = self.V
-#         self.P_prev = self.P
-#         self.L = self.L + dL
-#         self.V = self.calculate_V()  # update V
-#         self.P = self.calculate_P()  # update P
+    def change_length(self, dL):
+        self.V_prev = self.V
+        # self.P_prev = self.P
+        self.L = self.L + dL
+        self.V = self.calculate_V()  # update V
+        # self.P = self.calculate_P()  # update P
 
-#         if self.load_valve == 1: # If load valve is open 
-#             #Equalize pressures between chamber and connected load
-#             self.equalize_pressures_with_load() 
-#         return
+        # if self.load_valve == 1: # If load valve is open 
+        #     #Equalize pressures between chamber and connected load
+        #     self.equalize_pressures_with_load() 
+        return
 
 #     def equalize_pressures_with_load(self):
 #         P_new = (self.P * self.V + self.load_P * self.load_V) / (
@@ -225,14 +225,15 @@ class real_pump:
             # self.Rchamber.P =   self.pressure[1]
             # self.Lchamber.load_P =   self.pressure[2]
             # self.Rchamber.load_P =   self.pressure[3]
-            print('Received pressures:', self.pressure)
+            print('Received pressures Ll, Cl, Cr, Lr: {:.0f}, {:.0f}, {:.0f}, {:.0f}'.format(
+                self.pressure[2], self.pressure[0], self.pressure[1], self.pressure[3]))
 
             # If completely similar
             if (self.pressure_old == self.pressure).all():
                 self.stagnant_count += 1
             else:
                 self.stagnant_count = 0
-            if self.stagnant_count > 3:
+            if self.stagnant_count > 5:
                 # input('Stagnant pressure detected, shutting off valves and restarting pressure sensors...')
                 # self.set_valves([0,0,0,0,0])
                 # time.sleep(1)
@@ -440,15 +441,15 @@ class real_pump:
         if self.P_M - dL < self.P_M_L_Limitation:
             # Move to the far left
             dL = self.P_M - self.P_M_L_Limitation
-            # self.Lchamber.change_length(-dL)
-            # self.Rchamber.change_length(dL)
+            self.Lchamber.change_length(-dL)
+            self.Rchamber.change_length(dL)
             self.P_M = self.P_M_L_Limitation
             self.set_position(self.P_M)
         else:
             # Move to the left
             self.P_M = self.P_M - dL
-            # self.Lchamber.change_length(-dL)
-            # self.Rchamber.change_length(dL)
+            self.Lchamber.change_length(-dL)
+            self.Rchamber.change_length(dL)
             self.set_position(self.P_M)
         return
 
@@ -459,16 +460,16 @@ class real_pump:
         if self.P_M + dL > self.P_M_R_Limitation:
             # Move to the far right
             dL = self.P_M_R_Limitation - self.P_M
-            # self.Lchamber.change_length(dL) 
-            # self.Rchamber.change_length(-dL)
+            self.Lchamber.change_length(dL) 
+            self.Rchamber.change_length(-dL)
             self.P_M = self.P_M_R_Limitation
             print("Setting position to: ", self.P_M)
             self.set_position(self.P_M)
         else:
             # Move to the right
             self.P_M = self.P_M + dL
-            # self.Lchamber.change_length(dL)
-            # self.Rchamber.change_length(-dL)
+            self.Lchamber.change_length(dL)
+            self.Rchamber.change_length(-dL)
             print("Setting position to: ", self.P_M)
             self.set_position(self.P_M)
         return

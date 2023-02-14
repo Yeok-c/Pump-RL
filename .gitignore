@@ -1,4 +1,6 @@
 __pycache__
 logs
 models
-saved_figures**/*\/**
+
+**/*\saved_figures**\/**
+**.zip
