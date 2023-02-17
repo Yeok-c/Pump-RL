@@ -441,8 +441,10 @@ class PumpRealEnvVar_Two(PumpEnv):
 
         # Calibrate
         self.tim("Step observation finished")
-        V_L, V_R = self.calibrate_advanced(render=True)
+        # V_L, V_R = self.calibrate_advanced(render=True)
         # V_L, V_R = self.calibrate(render=True)
+        V_L, V_R = 0.00001, 0.00001
+        V_L = V_L
         self.tim("Calibrate")
 
         # Reset pump to original state
@@ -627,38 +629,41 @@ class PumpRealEnvVar_Two(PumpEnv):
 
         action_names_2 = np.array([
             # Calibrate left load first. PC1 is P_0 as initialized
-            "(a) Max right, open left valve to intake air ",
-            "(b) Max left. (set PC1 to current reading)",
-            "(c) Max left, open left load valve",
-            "(d) Take reading since now they're equalized to P2", 
-            "(c) Max left, open left load valve",
+            "0  Max left. loop 1                                                    ",
+            "1  Max right, open inner valve                                         ",
+            "2  Max left. loop 2                                                    ",
+            "3  Max right, open inner valve                                         ",
+            "4  Max left, ready to eq                                               ",
+            "5  Max left, open left load valve (equalize load and chamber pressures)",
             
             # Calibrate right load now. PC1 is P_0 as initialized
-            "(a) Max left, open right valve to intake air ",
-            "(b) Max right. (set PC1 to current reading)",
-            "(c) Max right, open right load valve",
-            "(d) Take reading since now they're equalized to P2",
-            "(d) Take reading since now they're equalized to P2",
-
+            "6  Max right. loop 1                                                     ", 
+            "7  Max left, open inner valve                                            ", 
+            "8  Max right. loop 2                                                     ", 
+            "9  Max left, open inner valve                                            ", 
+            "10 Max right, ready to eq                                                ", 
+            "11 Max right, open right load valve (equalize load and chamber pressures)", 
             ])
 
         action_sequence_2 = np.array([
 
             # Calibrate left load first. PC1 is P_0 as initialized
             #    N lL cL cR lR  I  notation
-            [-1, 0, 0, 0, 1, 0, 0,], # 0 (b) Max left. (set PC1 to current reading)
-            [ 1, 0, 0, 0, 0, 0, 1,], # 1 (a) Max right (optional), open left valve to intake air 
-            [-1, 0, 0, 0, 1, 0, 0,], # 2 (b) Max left. (set PC1 to current reading)
-            [ 1, 0, 0, 0, 0, 0, 1,], # 3 (a) Max right (optional), open left valve to intake air 
-            [-1, 0, 1, 0, 0, 0, 0,], # 4 (c) Max left, open left load valve (equalize load and chamber pressures)
-            # Now the left load and left chamber pressure have equalized to P2 
+            [-1, 0, 0, 0, 1, 0, 0,], # 0  Max left. loop 1                                                                  
+            [ 1, 0, 0, 0, 0, 0, 1,], # 1  Max right, open inner valve                                                               
+            [-1, 0, 0, 0, 1, 0, 0,], # 2  Max left. loop 2                                                                      
+            [ 1, 0, 0, 0, 0, 0, 1,], # 3  Max right, open inner valve                                                       
+            [-1, 1, 0, 0, 0, 0, 0,], # 4  Max left, ready to eq                                                                 
+            [-1, 0, 1, 0, 0, 0, 0,], # 5  Max left, open left load valve (equalize load and chamber pressures)
+            # Now the left load and left chamber pressure have equalized to P2                                          
             
-            [ 1, 0, 0, 1, 0, 0, 0,], # 5 (b) Max right. (set PC1 to current reading)            
-            [-1, 0, 0, 0, 0, 0, 1,], # 6 (a) Max left (optional), open right valve to intake air 
-            [ 1, 0, 0, 1, 0, 0, 0,], # 7 (b) Max right. (set PC1 to current reading)            
-            [-1, 0, 0, 0, 0, 0, 1,], # 8 (a) Max left (optional), open right valve to intake air 
-            [ 1, 0, 0, 0, 0, 1, 0,], # 9 (c) Max right, open right load valve (equalize load and chamber pressures)
-            # Now the right load and right chamber pressure have equalized to P2 
+            [ 1, 0, 0, 1, 0, 0, 0,], # 6  Max right. loop 1                                                         
+            [-1, 0, 0, 0, 0, 0, 1,], # 7  Max left, open inner valve                                                            
+            [ 1, 0, 0, 1, 0, 0, 0,], # 8  Max right. loop 2                                                             
+            [-1, 0, 0, 0, 0, 0, 1,], # 9  Max left, open inner valve                                                            
+            [ 1, 1, 0, 0, 0, 0, 0,], # 10 Max right, ready to eq                                                                    
+            [ 1, 0, 0, 0, 0, 1, 0,], # 11 Max right, open right load valve (equalize load and chamber pressures)    
+            # Now the right load and right chamber pressure have equalized to P2                                        
         
         ])
 
@@ -687,8 +692,15 @@ class PumpRealEnvVar_Two(PumpEnv):
         V_1r=[]
         V_2r=[]
 
-        for sign in [1 , -1]:
-            for step_scale in np.arange(0.2, 1, 1/n_steps):
+        # step_scale_1 = np.arange(0.2, 1, 1/n_steps)
+        # step_scale_2 = np.arange(0.6, 1, 1/(n_steps*2))
+        # print(step_scale_1, step_scale_2)
+        step_scale_1 = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0])
+        step_scale_2 = np.array([0.65, 0.7,  0.75, 0.8, 0.85, 0.9,  0.95, 1.0])
+        #  0    1   2   3   4   5   6     7     8     9   10   11     12    13   14   15    16   17   18   19
+        
+        for sign in [1]:
+            for step_scale in step_scale_1:
                 print(f"Calibrating with step_scale: {step_scale}")
                 self.pump.set_valves([1,1,1,1,1])
                 self.pump.set_position(0)
@@ -696,7 +708,7 @@ class PumpRealEnvVar_Two(PumpEnv):
                 # for i in range(self.max_episodes):
                 for i, (name, action) in enumerate(zip(action_names, action_sequence)):
                     action = np.concatenate(([action[0]*sign*step_scale], action[1:]))
-                    print(name, f" action: {action}, step_scale: {step_scale}")
+                    print(name, f" action: {action}, step_scale and sign: {sign*step_scale:.2f}")
                     _,_,_,_ = self.step(action)
                     # if render==1:
                         # self.render(0, title=name)
@@ -706,15 +718,21 @@ class PumpRealEnvVar_Two(PumpEnv):
                         # self.pump.get_pressure()  # real pump
                         P_L1 = self.pump.pressure[2]
                         P_C1 = self.pump.pressure[0]
-                        V_C1 = self.pump.Lchamber.V
+                        if sign == 1:
+                            V_1l.append(self.pump.Lchamber.V)
+                        elif sign == -1:
+                            V_1r.append(self.pump.Rchamber.V)
                     if i == 2:
                         # assert self.pump.Lchamber.load_P == self.pump.Lchamber.P
                         # P_2 = self.pump.Lchamber.P # which should also be observation[5]
                         # V_L = (P_2-P_C1)/(P_L1-P_2) * self.pump.Lchamber.V
                         # self.pump.get_pressure()  # real pump
                         P_2 = self.pump.pressure[0] # which should also be observation[5]
-                        V_C2 = self.pump.Lchamber.V
-
+                        if sign == 1:
+                            V_2l.append(self.pump.Lchamber.V)
+                        elif sign == -1:
+                            V_2r.append(self.pump.Rchamber.V)
+                        
                         if P_L1-P_2 == 0: # If no change
                             V_L = LOAD_V_RANGE[1]
                             Cdl = 100
@@ -725,8 +743,6 @@ class PumpRealEnvVar_Two(PumpEnv):
                             P_Ll.append(P_L1)
                             P_Cl.append(P_C1)
                             P_2l.append(P_2)
-                            V_1l.append(V_C1)
-                            V_2l.append(V_C2)
 
                     if i == 4: # reading taking frames
                         # P_L1 = self.pump.Rchamber.load_P
@@ -734,14 +750,20 @@ class PumpRealEnvVar_Two(PumpEnv):
                         # self.pump.get_pressure()  # real pump
                         P_L1 = self.pump.pressure[3] #self.Rchamber.load_P
                         P_C1 = self.pump.pressure[1] #self.Rchamber.P
-                        V_C1 = self.pump.Rchamber.V
+                        if sign == 1:
+                            V_1r.append(self.pump.Rchamber.V)
+                        elif sign == -1:
+                            V_1l.append(self.pump.Lchamber.V)
                     if i == 5:
                         # assert self.pump.Rchamber.load_P==self.pump.Rchamber.P
                         # P_2 = self.pump.Rchamber.P
                         # V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber_V
                         # self.pump.get_pressure()  # real pump
                         P_2 = self.pump.pressure[1]  #self.Rchamber.P
-                        V_C2 = self.pump.Rchamber.V
+                        if sign == 1:
+                            V_2r.append(self.pump.Rchamber.V)
+                        elif sign == -1:
+                            V_2l.append(self.pump.Lchamber.V)
 
                         if P_L1-P_2 == 0: # If no change
                             V_R = LOAD_V_RANGE[1]
@@ -750,14 +772,11 @@ class PumpRealEnvVar_Two(PumpEnv):
                         else: # Default
                             V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber.V
                             # Get datapoint
-
                             P_Lr.append(P_L1)
                             P_Cr.append(P_C1)
                             P_2r.append(P_2)
-                            V_1r.append(V_C1)
-                            V_2r.append(V_C2)
 
-            for step_scale in np.arange(0.2, 1, 1/(n_steps/2)):
+            for step_scale in step_scale_2:
                 print(f"Calibrating with step_scale: {step_scale}")
                 self.pump.set_valves([1,1,1,1,1])
                 self.pump.set_position(0)
@@ -765,24 +784,32 @@ class PumpRealEnvVar_Two(PumpEnv):
                 # for i in range(self.max_episodes):
                 for i, (name, action) in enumerate(zip(action_names_2, action_sequence_2)):
                     action = np.concatenate(([action[0]*sign*step_scale], action[1:]))
-                    print(name, f" action: {action}, step_scale: {step_scale}")
+                    print(name, f" action: {action}, step_scale and sign: {sign*step_scale:.2f}")
                     _,_,_,_ = self.step(action)
                     # if render==1:
                         # self.render(0, title=name)
-                    if i == 3:
+                    if i == 4:
                         # P_L1 = self.pump.Lchamber.load_P
                         # P_C1 = self.pump.Lchamber.P
                         # self.pump.get_pressure()  # real pump
                         P_L1 = self.pump.pressure[2]
                         P_C1 = self.pump.pressure[0]
-                        V_C1 = self.pump.Lchamber.V
-                    if i == 4:
+                        if sign == 1:
+                            V_1l.append(self.pump.Lchamber.V)
+                        elif sign == -1:
+                            V_1r.append(self.pump.Rchamber.V)
+
+                    if i == 5:
                         # assert self.pump.Lchamber.load_P == self.pump.Lchamber.P
                         # P_2 = self.pump.Lchamber.P # which should also be observation[5]
                         # V_L = (P_2-P_C1)/(P_L1-P_2) * self.pump.Lchamber.V
                         # self.pump.get_pressure()  # real pump
                         P_2 = self.pump.pressure[0] # which should also be observation[5]
-                        V_C2 = self.pump.Lchamber.V
+                        if sign == 1:
+                            V_2l.append(self.pump.Lchamber.V)
+                        elif sign == -1:
+                            V_2r.append(self.pump.Rchamber.V)
+
 
                         if P_L1-P_2 == 0: # If no change
                             V_L = LOAD_V_RANGE[1]
@@ -794,23 +821,28 @@ class PumpRealEnvVar_Two(PumpEnv):
                             P_Ll.append(P_L1)
                             P_Cl.append(P_C1)
                             P_2l.append(P_2)
-                            V_1l.append(V_C1)
-                            V_2l.append(V_C2)
 
-                    if i == 8: # reading taking frames
+                    if i == 10: # reading taking frames
                         # P_L1 = self.pump.Rchamber.load_P
                         # P_C1 = self.pump.Rchamber.P
                         # self.pump.get_pressure()  # real pump
                         P_L1 = self.pump.pressure[3] #self.Rchamber.load_P
                         P_C1 = self.pump.pressure[1] #self.Rchamber.P
-                        V_C1 = self.pump.Rchamber.V
-                    if i == 9:
+                        if sign == 1:
+                            V_1r.append(self.pump.Rchamber.V)
+                        elif sign == -1:
+                            V_1l.append(self.pump.Lchamber.V)
+
+                    if i == 11:
                         # assert self.pump.Rchamber.load_P==self.pump.Rchamber.P
                         # P_2 = self.pump.Rchamber.P
                         # V_R = (P_2-P_C1)/(P_L1-P_2) * self.pump.Rchamber_V
                         # self.pump.get_pressure()  # real pump
                         P_2 = self.pump.pressure[1]  #self.Rchamber.P
-                        V_C2 = self.pump.Rchamber.V
+                        if sign == 1:
+                            V_2r.append(self.pump.Rchamber.V)
+                        elif sign == -1:
+                            V_2l.append(self.pump.Lchamber.V)
 
                         if P_L1-P_2 == 0: # If no change
                             V_R = LOAD_V_RANGE[1]
@@ -823,8 +855,6 @@ class PumpRealEnvVar_Two(PumpEnv):
                             P_Lr.append(P_L1)
                             P_Cr.append(P_C1)
                             P_2r.append(P_2)
-                            V_1r.append(V_C1)
-                            V_2r.append(V_C2)
 
         pickle.dump([
             P_Ll,
@@ -1032,82 +1062,100 @@ if "__main__" == __name__:
         use_step_loss = False,
         )
 
-    env.experiment_pump_properties()
+    actions=[
+    #    PM  N  lL cL cR lR I  notation
+        # [ 1, 0, 0, 1, 0, 0, 0,],
+        # [-1, 0, 1, 0, 0, 0, 0,],
+        # [-1, 1, 0, 0, 0, 0, 0,],
+        
+        [-1, 0, 0, 0, 1, 0, 0,],
+        [ 1, 0, 0, 0, 0, 0, 1,],
+        [-1, 0, 0, 0, 1, 0, 0,],
+        [ 1, 0, 0, 0, 0, 0, 1,],
+        [-1, 0, 1, 0, 0, 0, 0,],
+        
+        ]
 
-    def load_experiment_results(filepath = "./scripts/chamber_experiments_real.p"):
-        [P_M_, LCHAMBER_P_, RCHAMBER_P_] = pickle.load( open( filepath, "rb" ) )
-        P_M_=np.array(P_M_) 
-        LCHAMBER_P_=np.array(LCHAMBER_P_) 
-        RCHAMBER_P_=np.array(RCHAMBER_P_)
-        return P_M_, LCHAMBER_P_, RCHAMBER_P_
+    # for i in range(10):
+        # print(f"Loop {i}")
+    for action in actions:
+        _,_,_,_ = env.step(action)
+    # env.experiment_pump_properties()
 
-    fig, ax = plt.subplots(ncols=1, nrows=3, figsize=(20, 5))
-    ax=ax.flatten()
+    # def load_experiment_results(filepath = "./scripts/chamber_experiments_real.p"):
+    #     [P_M_, LCHAMBER_P_, RCHAMBER_P_] = pickle.load( open( filepath, "rb" ) )
+    #     P_M_=np.array(P_M_) 
+    #     LCHAMBER_P_=np.array(LCHAMBER_P_) 
+    #     RCHAMBER_P_=np.array(RCHAMBER_P_)
+    #     return P_M_, LCHAMBER_P_, RCHAMBER_P_
 
-    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_range_010.p")
-    ax[0].plot(P_M_, linestyle='dashed', color=blue)
-    ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=blue)
-    ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=blue)
+    # fig, ax = plt.subplots(ncols=1, nrows=3, figsize=(20, 5))
+    # ax=ax.flatten()
 
-    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_sim_range_009.p")
-    ax[0].plot(P_M_, linestyle='solid', color=blue)
-    ax[1].plot(LCHAMBER_P_, linestyle='solid', color=blue)
-    ax[2].plot(RCHAMBER_P_, linestyle='solid', color=blue)
+    # P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_range_010.p")
+    # ax[0].plot(P_M_, linestyle='dashed', color=blue)
+    # ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=blue)
+    # ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=blue)
 
-    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_range_009.p")
-    ax[0].plot(P_M_, linestyle='dashed', color=orange)
-    ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=orange)
-    ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=orange)
+    # P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_sim_range_009.p")
+    # ax[0].plot(P_M_, linestyle='solid', color=blue)
+    # ax[1].plot(LCHAMBER_P_, linestyle='solid', color=blue)
+    # ax[2].plot(RCHAMBER_P_, linestyle='solid', color=blue)
 
-    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_sim_range_008.p")
-    ax[0].plot(P_M_, linestyle='solid', color=orange)
-    ax[1].plot(LCHAMBER_P_, linestyle='solid', color=orange)
-    ax[2].plot(RCHAMBER_P_, linestyle='solid', color=orange)
+    # P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_range_009.p")
+    # ax[0].plot(P_M_, linestyle='dashed', color=orange)
+    # ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=orange)
+    # ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=orange)
 
-    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_009_motor_r_035.p")
-    ax[0].plot(P_M_, linestyle='dashed', color=magenta)
-    ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=magenta)
-    ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=magenta)
+    # P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_sim_range_008.p")
+    # ax[0].plot(P_M_, linestyle='solid', color=orange)
+    # ax[1].plot(LCHAMBER_P_, linestyle='solid', color=orange)
+    # ax[2].plot(RCHAMBER_P_, linestyle='solid', color=orange)
 
-    prev_len = len(P_M_)
-    P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_latest.p")
-    data_x = np.linspace(0, prev_len, len(P_M_))
-    ax[0].plot(data_x, P_M_, linestyle='dashed', color=grey_darker)
-    ax[1].plot(data_x, LCHAMBER_P_, linestyle='dashed', color=grey_darker)
-    ax[2].plot(data_x, RCHAMBER_P_, linestyle='dashed', color=grey_darker)
+    # P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_009_motor_r_035.p")
+    # ax[0].plot(P_M_, linestyle='dashed', color=magenta)
+    # ax[1].plot(LCHAMBER_P_, linestyle='dashed', color=magenta)
+    # ax[2].plot(RCHAMBER_P_, linestyle='dashed', color=magenta)
 
-
-    ax[0].legend([
-        "Real, range 0.010", 
-        "Sim, range 0.009", 
-        "Real, range 0.009", 
-        "Sim, range 0.008", 
-        "Real, range 0.009, motor_r 0.035",
-        "Real, latest",
-    ])
-
-    ax[1].legend([
-        "Real, range 0.010", 
-        "Sim, range 0.009", 
-        "Real, range 0.009", 
-        "Sim, range 0.008",         
-        "Real, range 0.009, motor_r 0.035",
-        "Real, latest",
-
-    ])
-
-    ax[2].legend([
-        "Real, range 0.010", 
-        "Sim, range 0.009", 
-        "Real, range 0.009", 
-        "Sim, range 0.008", 
-        "Real, range 0.009, motor_r 0.035",
-        "Real, latest",
-    ])
+    # prev_len = len(P_M_)
+    # P_M_, LCHAMBER_P_, RCHAMBER_P_ = load_experiment_results(filepath="./scripts/chamber_experiments_real_latest.p")
+    # data_x = np.linspace(0, prev_len, len(P_M_))
+    # ax[0].plot(data_x, P_M_, linestyle='dashed', color=grey_darker)
+    # ax[1].plot(data_x, LCHAMBER_P_, linestyle='dashed', color=grey_darker)
+    # ax[2].plot(data_x, RCHAMBER_P_, linestyle='dashed', color=grey_darker)
 
 
-    fig.savefig('./scripts/changed_params_pressures.png', format = 'png')
-    plt.show()
+    # ax[0].legend([
+    #     "Real, range 0.010", 
+    #     "Sim, range 0.009", 
+    #     "Real, range 0.009", 
+    #     "Sim, range 0.008", 
+    #     "Real, range 0.009, motor_r 0.035",
+    #     "Real, latest",
+    # ])
+
+    # ax[1].legend([
+    #     "Real, range 0.010", 
+    #     "Sim, range 0.009", 
+    #     "Real, range 0.009", 
+    #     "Sim, range 0.008",         
+    #     "Real, range 0.009, motor_r 0.035",
+    #     "Real, latest",
+
+    # ])
+
+    # ax[2].legend([
+    #     "Real, range 0.010", 
+    #     "Sim, range 0.009", 
+    #     "Real, range 0.009", 
+    #     "Sim, range 0.008", 
+    #     "Real, range 0.009, motor_r 0.035",
+    #     "Real, latest",
+    # ])
+
+
+    # fig.savefig('./scripts/changed_params_pressures.png', format = 'png')
+    # plt.show()
 
 
     # env = PumpRealEnvVar_Two(

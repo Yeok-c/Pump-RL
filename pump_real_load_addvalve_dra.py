@@ -10,10 +10,10 @@ import time
 
 
 P_0 = 1.01*1e5  # Pa
-
+L_0=0.048
 
 class chamber:
-    def __init__(self, L0=0.048, P0=P_0, load_volume=0, K_deform=0.05):
+    def __init__(self, L0=L_0, P0=P_0, load_volume=0, K_deform=0.05):
         # self.radius = 0.02  # Radius of chamber
         self.a = 0.034 # 0.03  # The short edge of chamber cross surface
         self.c = 0.0068 # 0.03  # The long edge of chamber cross surface
@@ -48,6 +48,7 @@ class chamber:
         h = L / self.n / 2 # L=0.048 (m), n=6, h=0.004 (m)
         V_seg = 2 * a * a * h + math.sqrt(2) * a * c * h
         # V_seg = 2 * self.a * self.a * h + math.sqrt(2) * self.a * self.c * h
+        # print(L)
         V_seg = V_seg + (math.sqrt(2) * a + 2.0/3 * c) * math.sqrt(c*c - 2*h*h) * h
         # V = self.n * V_seg + compensate
         V = self.n * V_seg 
@@ -72,17 +73,17 @@ class chamber:
 #         P = self.P_prev * self.V_prev / self.V
 #         return P
 
-    def change_length(self, dL):
-        self.V_prev = self.V
+    # def change_length(self, dL):
+    #     self.V_prev = self.V
         # self.P_prev = self.P
-        self.L = self.L + dL
-        self.V = self.calculate_V()  # update V
+        # self.L = self.L + dL
+    #     self.V = self.calculate_V()  # update V
         # self.P = self.calculate_P()  # update P
 
         # if self.load_valve == 1: # If load valve is open 
         #     #Equalize pressures between chamber and connected load
         #     self.equalize_pressures_with_load() 
-        return
+    #     return
 
 #     def equalize_pressures_with_load(self):
 #         P_new = (self.P * self.V + self.load_P * self.load_V) / (
@@ -286,6 +287,9 @@ class real_pump:
                 print("Restarted hardware, set position again")
                 moving_done = self.set_position(position)
         self.get_position()
+        self.Lchamber.V = self.Lchamber.calculate_V(L=L_0+self.P_M)
+        self.Rchamber.V = self.Rchamber.calculate_V(L=L_0-self.P_M)
+
         return moving_done
 
     def get_valves(self):
@@ -441,15 +445,16 @@ class real_pump:
         if self.P_M - dL < self.P_M_L_Limitation:
             # Move to the far left
             dL = self.P_M - self.P_M_L_Limitation
-            self.Lchamber.change_length(-dL)
-            self.Rchamber.change_length(dL)
+            # self.Lchamber.change_length(-dL)
+            # self.Rchamber.change_length(dL)
             self.P_M = self.P_M_L_Limitation
             self.set_position(self.P_M)
+            
         else:
             # Move to the left
             self.P_M = self.P_M - dL
-            self.Lchamber.change_length(-dL)
-            self.Rchamber.change_length(dL)
+            # self.Lchamber.change_length(-dL)
+            # self.Rchamber.change_length(dL)
             self.set_position(self.P_M)
         return
 
@@ -460,16 +465,16 @@ class real_pump:
         if self.P_M + dL > self.P_M_R_Limitation:
             # Move to the far right
             dL = self.P_M_R_Limitation - self.P_M
-            self.Lchamber.change_length(dL) 
-            self.Rchamber.change_length(-dL)
+            # self.Lchamber.change_length(dL) 
+            # self.Rchamber.change_length(-dL)
             self.P_M = self.P_M_R_Limitation
             print("Setting position to: ", self.P_M)
             self.set_position(self.P_M)
         else:
             # Move to the right
             self.P_M = self.P_M + dL
-            self.Lchamber.change_length(dL)
-            self.Rchamber.change_length(-dL)
+            # self.Lchamber.change_length(dL)
+            # self.Rchamber.change_length(-dL)
             print("Setting position to: ", self.P_M)
             self.set_position(self.P_M)
         return

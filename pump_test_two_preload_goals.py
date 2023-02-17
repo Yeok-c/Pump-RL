@@ -7,6 +7,7 @@ import pickle
 import os
 import cv2
 import numpy as np
+import glob
 
 # os.chdir("Pump-RL-Real")
 
@@ -20,8 +21,9 @@ MEAN_REWARD=[]
 STD_REWARD=[]
 # for load in test_loads:
 
-episodes = 10
-for ep in range(episodes):
+# episodes=6
+# for ep in range(episodes):
+for ep in [1, 2, 3, 4, 5]:
     # Create environment
     load = 0
     env = PumpRealEnvVar_Two(
@@ -51,22 +53,9 @@ for ep in range(episodes):
     load = str(load).replace('.', '_')
 
     # env.reset()
-
-    GL=env.goal_pressure_sequence_L
-    GR=env.goal_pressure_sequence_R
+    
 
     # Load the trained agent
-
-    # Test
-    # model_dir = "remote_models"
-    # model_run = "1671860789"
-    # model_step = "11000000"       
-
-    # model_dir = "models"
-    # model_run = "1673923036"
-    # model_step = "4000000"    
-
-    # model_path = "./logs/rl_model_17502000_steps" # for var load experiment
 
     model_dir = "models"
     model_run = "1675862353"
@@ -77,7 +66,11 @@ for ep in range(episodes):
 
 
     P_L, P_R, P_L_S, P_R_S, P_R_G, P_L_G, R, R_S = [], [],[],[],[], [], [], []
-    
+    [_, _, _, _, P_R_G, P_L_G, _, _, _, _] = pickle.load( open( f"./saved_figures/0/tracking_results_ep_{ep}.p", "rb" ) )
+    env.goal_pressure_sequence_L = P_L_G*1000+P_0 
+    env.goal_pressure_sequence_R = np.ones((env.max_episodes+env.future_frames,))*P_0 # P_R_G*1000+P_0
+
+
     # Start simulation
     if not os.path.exists(f"./saved_figures/{load}"):
         os.system(f"mkdir ./saved_figures/{load}")
@@ -138,7 +131,11 @@ for ep in range(episodes):
 
         # print("obs:", obs[-1])
         # print('env.load', env.load)
+        
         action, _states = model.predict(env.step_observation)
+        # while np.argmax(action)==4 or np.argmax(action)==5:
+        # action, _states = model.predict(env.step_observation)
+        # print(action)
         # action, _states = model.predict(env_sim.step_observation)
         print("\n\n\n")
         for idx in range(len(env.step_observation)):
